@@ -53,7 +53,7 @@ const REQUIRED_FIELDS = [
 
 function formatCurrency(value: any): string | any {
   // Try to convert to a number.
-  let num = Number(value);
+  let num = Number(String(value).replace(',', '.'));
 
   // If it's not a valid number, return the original value.
   if (isNaN(num)) {
@@ -139,10 +139,11 @@ export async function processExcelFile(
       // Add hardcoded values first
       newRow['NUM_BAN'] = 17;
       newRow['NOM_BANCO'] = 'V8DIGITAL';
+      newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
 
       for (const requiredField of REQUIRED_FIELDS) {
         // Skip hardcoded fields
-        if (requiredField === 'NUM_BAN' || requiredField === 'NOM_BANCO') {
+        if (requiredField === 'NUM_BAN' || requiredField === 'NOM_BANCO' || requiredField === 'PCL_TAXA_EMPRESTIMO') {
             continue;
         }
 
