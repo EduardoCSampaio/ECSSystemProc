@@ -54,9 +54,9 @@ export default function Home() {
             <Button asChild size="lg" variant="secondary">
               <Link href="/facta">FACTA</Link>
             </Button>
-            <Button asChild size="lg">
+            {/* <Button asChild size="lg">
               <Link href="/presencabank">PRESENÇABANK</Link>
-            </Button>
+            </Button> */}
             <Button asChild size="lg" variant="secondary">
               <Link href="/qualibanking">QUALIBANKING</Link>
             </Button>
