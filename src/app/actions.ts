@@ -5,16 +5,58 @@ import { extractDataWithContext } from "@/ai/flows/data-extraction-with-context"
 
 // The fields we want to extract from the Excel file.
 const REQUIRED_FIELDS = [
-  "Full Name",
-  "Email Address",
-  "Phone Number",
-  "Company Name",
-  "Job Title",
-  "Address",
-  "City",
-  "State",
-  "Zip Code",
-  "Country",
+  "NOM_BANCO",
+  "NUM_PROPOSTA",
+  "NUM_CONTRATO",
+  "DSC_TIPO_PROPOSTA_EMPRESTIMO",
+  "COD_PRODUTO",
+  "DSC_PRODUTO",
+  "DAT_CTR_INCLUSAO",
+  "DSC_SITUACAO_EMPRESTIMO",
+  "DAT_EMPRESTIMO",
+  "COD_EMPREGADOR",
+  "DSC_CONVENIO",
+  "COD_ORGAO",
+  "NOM_ORGAO",
+  "COD_PRODUTOR_VENDA",
+  "NOM_PRODUTOR_VENDA",
+  "NIC_CTR_USUARIO",
+  "COD_CPF_CLIENTE",
+  "NOM_CLIENTE",
+  "DAT_NASCIMENTO",
+  "NUM_IDENTIDADE",
+  "NOM_LOGRADOURO",
+  "NUM_PREDIO",
+  "DSC_CMPLMNT_ENDRC",
+  "NOM_BAIRRO",
+  "NOM_LOCALIDADE",
+  "SIG_UNIDADE_FEDERACAO",
+  "COD_ENDRCMNT_PSTL",
+  "NUM_TELEFONE",
+  "NUM_TELEFONE_CELULAR",
+  "NOM_MAE",
+  "NOM_PAI",
+  "NUM_BENEFICIO",
+  "QTD_PARCELA",
+  "VAL_PRESTACAO",
+  "VAL_BRUTO",
+  "VAL_SALDO_RECOMPRA",
+  "VAL_SALDO_REFINANCIAMENTO",
+  "VAL_LIQUIDO",
+  "PCR_PMT_PAGO_REF",
+  "DAT_CREDITO",
+  "DAT_CONFIRMACAO",
+  "VAL_REPASSE",
+  "PCL_COMISSAO",
+  "VAL_COMISSAO",
+  "COD_UNIDADE_EMPRESA",
+  "COD_SITUACAO_EMPRESTIMO",
+  "DAT_ESTORNO",
+  "DSC_OBSERVACAO",
+  "NUM_CPF_AGENTE",
+  "NUM_OBJETO_ECT",
+  "PCL_TAXA_EMPRESTIMO",
+  "DSC_TIPO_FORMULARIO_EMPRESTIMO",
 ];
 
 export async function processExcelFile(
@@ -37,16 +79,12 @@ export async function processExcelFile(
     const instructions = `
       From the uploaded Excel file, extract the data based on the following column mappings and return it as a JSON array of objects.
       Each object in the array should represent a row from the original file.
-      - Map the column "${fieldMapping["Full Name"] || ""}" to "Full Name".
-      - Map the column "${fieldMapping["Email Address"] || ""}" to "Email Address".
-      - Map the column "${fieldMapping["Phone Number"] || ""}" to "Phone Number".
-      - Map the column "${fieldMapping["Company Name"] || ""}" to "Company Name".
-      - Map the column "${fieldMapping["Job Title"] || ""}" to "Job Title".
-      - Map the column "${fieldMapping["Address"] || ""}" to "Address".
-      - Map the column "${fieldMapping["City"] || ""}" to "City".
-      - Map the column "${fieldMapping["State"] || ""}" to "State".
-      - Map the column "${fieldMapping["Zip Code"] || ""}" to "Zip Code".
-      - Map the column "${fieldMapping["Country"] || ""}" to "Country".
+      ${REQUIRED_FIELDS.map(
+        (field) =>
+          `- Map the column "${
+            fieldMapping[field] || ""
+          }" to "${field}".`
+      ).join("\n")}
       
       If a source column for a mapping is empty or not found, do not include that field in the output objects.
       Ensure the output is only the JSON data, with no additional text or explanations.
