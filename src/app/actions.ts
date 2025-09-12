@@ -49,6 +49,22 @@ const REQUIRED_FIELDS = [
   "DSC_TIPO_FORMULARIO_EMPRESTIMO",
 ];
 
+function formatCurrency(value: any): string | any {
+  // Try to convert to a number.
+  let num = Number(value);
+
+  // If it's not a valid number, return the original value.
+  if (isNaN(num)) {
+    return value;
+  }
+
+  // Format to Brazilian currency format.
+  return num.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export async function processExcelFile(
   excelDataUri: string
 ): Promise<{ success: true; data: string } | { success: false; error: string }> {
@@ -96,10 +112,14 @@ export async function processExcelFile(
       for (const requiredField of REQUIRED_FIELDS) {
         if (headerMap.hasOwnProperty(requiredField)) {
           const colIndex = headerMap[requiredField];
-          const cellValue = (row as any[])[colIndex];
+          let cellValue = (row as any[])[colIndex];
            // Only add the field if it has a value
           if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
-            newRow[requiredField] = cellValue;
+            if (requiredField.startsWith('VAL_')) {
+              newRow[requiredField] = formatCurrency(cellValue);
+            } else {
+              newRow[requiredField] = cellValue;
+            }
             rowHasData = true;
           }
         }
