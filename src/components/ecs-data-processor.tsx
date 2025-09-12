@@ -24,17 +24,13 @@ import {
 
 type ProcessStep =
   | "idle"
-  | "mapping"
-  | "extracting"
-  | "generating"
+  | "processing"
   | "success"
   | "error";
 
 const stepMessages: Record<ProcessStep, string> = {
   idle: "Awaiting file upload.",
-  mapping: "Analyzing spreadsheet and mapping fields...",
-  extracting: "Extracting data from your file...",
-  generating: "Generating the new Excel file...",
+  processing: "Processing your spreadsheet...",
   success: "Your file is ready for download.",
   error: "An error occurred during processing.",
 };
@@ -48,9 +44,7 @@ export function EcsDataProcessor() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (step === "mapping") setProgress(25);
-    else if (step === "extracting") setProgress(60);
-    else if (step === "generating") setProgress(90);
+    if (step === "processing") setProgress(50);
     else if (step === "success") setProgress(100);
     else if (step === "idle" || step === "error") setProgress(0);
   }, [step]);
@@ -72,14 +66,12 @@ export function EcsDataProcessor() {
         }
 
         startTransition(async () => {
-          setStep("mapping");
+          setStep("processing");
           const result = await processExcelFile(dataUri);
 
           if (result.success) {
-            setStep("extracting");
             try {
               const jsonData = JSON.parse(result.data);
-              setStep("generating");
               setProcessedData(jsonData);
               setStep("success");
             } catch (e) {
@@ -87,7 +79,7 @@ export function EcsDataProcessor() {
                 variant: "destructive",
                 title: "Data Parse Error",
                 description:
-                  "The AI returned invalid data. Please try another file.",
+                  "Could not parse the processed data. Please try again.",
               });
               setStep("error");
             }
@@ -120,7 +112,7 @@ export function EcsDataProcessor() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Extracted Data");
     const baseName = originalFileName.replace(/\.(xlsx|xls|csv)$/, "");
-    XLSX.writeFile(wb, `${baseName}_extracted.xlsx`);
+    XLSX.writeFile(wb, `${baseName}_processed.xlsx`);
   };
 
   const handleReset = () => {
@@ -137,9 +129,7 @@ export function EcsDataProcessor() {
           <FileUpload onFileSelect={handleFileProcess} disabled={isPending} />
         );
 
-      case "mapping":
-      case "extracting":
-      case "generating":
+      case "processing":
         return (
           <div className="text-center w-full">
             <div className="flex justify-center items-center mb-4">
@@ -166,7 +156,7 @@ export function EcsDataProcessor() {
               {stepMessages.success}
             </p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              We have successfully extracted the data from{" "}
+              We have successfully processed the data from{" "}
               <span className="font-semibold">{originalFileName}</span>.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mt-4">

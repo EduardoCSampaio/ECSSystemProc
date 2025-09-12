@@ -1,9 +1,8 @@
 "use server";
 
-import { intelligentFieldMapping } from "@/ai/flows/intelligent-field-mapping";
-import { extractDataWithContext } from "@/ai/flows/data-extraction-with-context";
+import * as XLSX from "xlsx";
 
-// The fields we want to extract from the Excel file.
+// The fields we want to extract from the Excel file, in order.
 const REQUIRED_FIELDS = [
   "NOM_BANCO",
   "NUM_PROPOSTA",
@@ -63,46 +62,71 @@ export async function processExcelFile(
   excelDataUri: string
 ): Promise<{ success: true; data: string } | { success: false; error: string }> {
   try {
-    // Step 1: Intelligently map fields
-    const mappingResult = await intelligentFieldMapping({
-      excelData: excelDataUri,
-      requiredFields: REQUIRED_FIELDS,
+    // 1. Decode Data URI
+    const base64Data = excelDataUri.split(",")[1];
+    if (!base64Data) {
+      throw new Error("Invalid Excel file data.");
+    }
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // 2. Read the workbook
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    if (!worksheet) {
+      throw new Error("No worksheet found in the Excel file.");
+    }
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    // 3. Process headers and map columns
+    const headers = jsonData[0] as string[];
+    const headerMap: { [key: string]: number } = {};
+    headers.forEach((header, index) => {
+      // Normalize header to find a match in REQUIRED_FIELDS
+      const normalizedHeader = String(header).trim();
+      if (REQUIRED_FIELDS.includes(normalizedHeader)) {
+        headerMap[normalizedHeader] = index;
+      }
     });
     
-    if (!mappingResult || !mappingResult.fieldMapping) {
-      throw new Error("AI failed to map the fields from the Excel file.");
+    // Check if any required fields were found
+    const foundFields = Object.keys(headerMap);
+    if (foundFields.length === 0) {
+        throw new Error("Could not find any of the required columns in the uploaded file. Please check the column headers.");
     }
 
-    const { fieldMapping } = mappingResult;
+    // 4. Extract data based on the mapped headers
+    const extractedData: any[] = [];
+    const dataRows = jsonData.slice(1); // All rows except the header row
 
-    // Step 2: Construct extraction instructions based on the mapping
-    const instructions = `
-      From the uploaded Excel file, extract the data based on the following column mappings and return it as a JSON array of objects.
-      Each object in the array should represent a row from the original file.
-      ${REQUIRED_FIELDS.map(
-        (field) =>
-          `- Map the column "${
-            fieldMapping[field] || ""
-          }" to "${field}".`
-      ).join("\n")}
-      
-      If a source column for a mapping is empty or not found, do not include that field in the output objects.
-      Ensure the output is only the JSON data, with no additional text or explanations.
-    `;
-
-    // Step 3: Extract data using the constructed instructions
-    const extractionResult = await extractDataWithContext({
-      excelDataUri: excelDataUri,
-      extractionInstructions: instructions,
-    });
-    
-    if (!extractionResult || !extractionResult.extractedData) {
-      throw new Error("AI failed to extract data from the Excel file.");
+    for (const row of dataRows) {
+      const newRow: { [key: string]: any } = {};
+      let rowHasData = false;
+      for (const requiredField of REQUIRED_FIELDS) {
+        if (headerMap.hasOwnProperty(requiredField)) {
+          const colIndex = headerMap[requiredField];
+          const cellValue = (row as any[])[colIndex];
+           // Only add the field if it has a value
+          if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
+            newRow[requiredField] = cellValue;
+            rowHasData = true;
+          }
+        }
+      }
+       // Only add the row if it contains at least one piece of data
+      if (rowHasData) {
+        extractedData.push(newRow);
+      }
     }
 
-    return { success: true, data: extractionResult.extractedData };
+    if (extractedData.length === 0) {
+        throw new Error("No data was extracted. Please check if the data rows are empty or if the column headers are correct.");
+    }
+
+    return { success: true, data: JSON.stringify(extractedData) };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
+    console.error(errorMessage);
     return { success: false, error: errorMessage };
   }
 }
