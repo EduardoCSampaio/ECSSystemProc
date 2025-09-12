@@ -191,7 +191,7 @@ function formatDate(value: any): string {
                  date = new Date(Number(p3), Number(p2) - 1, Number(p1));
             }
              // MM/DD/YYYY or MM-DD-YYYY (heuristic)
-            else if (Number(p2) <= 12) { // Check if middle part is a valid month
+            else if (Number(p1) <= 12 && Number(p2) <= 31) { // Check if first part is a valid month
                  date = new Date(Number(p3), Number(p1) - 1, Number(p2)); // Handles MM/DD/YYYY
             } else {
                  date = new Date(Number(p3), Number(p2) - 1, Number(p1)); // Fallback to DD/MM/YYYY
@@ -377,7 +377,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const workbook = XLSX.read(buffer, { type: "buffer", raw: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
