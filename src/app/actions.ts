@@ -120,24 +120,41 @@ const UNNO_OUTPUT_FIELDS = UNNO_INPUT_FIELDS;
 type System = "V8DIGITAL" | "UNNO";
 
 function formatCurrency(value: any): string | any {
-  if (value === null || value === undefined || value === '') return '';
-  
-  let sValue = String(value).trim();
-  sValue = sValue.replace('.', '').replace(',', '.');
+    if (value === null || value === undefined || value === '') return '';
 
-  const num = parseFloat(sValue);
-  
-  if (isNaN(num)) {
-    return value;
-  }
+    let sValue = String(value).trim();
+    
+    // If it's already a valid number string with a comma decimal, just format it.
+    if (/^\d{1,3}(\.\d{3})*,\d{2}$/.test(sValue)) {
+        return sValue;
+    }
 
-  return num.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+    // Replace Brazilian thousand separator, then replace comma with dot for parsing
+    sValue = sValue.replace(/\./g, '').replace(',', '.');
+
+    const num = parseFloat(sValue);
+    
+    if (isNaN(num)) {
+        return value; // Return original value if it's not a number
+    }
+
+    return num.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 }
 
 function formatDate(value: any): string | any {
+    if (!value) return null;
+
+    // Handle cases where date includes time e.g., "DD/MM/YYYY HH:mm:ss"
+    if (typeof value === 'string') {
+        const parts = value.split(' ');
+        if (parts.length > 0 && /^\d{2}\/\d{2}\/\d{4}$/.test(parts[0])) {
+            return parts[0];
+        }
+    }
+    
     if (value instanceof Date && !isNaN(value.getTime())) {
         const formattedDate = format(value, 'dd/MM/yyyy');
         if (formattedDate === '30/11/1899') return null;
@@ -167,15 +184,14 @@ export async function processExcelFile(
     }
     const buffer = Buffer.from(base64Data, "base64");
 
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, raw: false });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
       throw new Error("No worksheet found in the Excel file.");
     }
     
-    // Read all cells as strings to avoid type issues
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
     // Determine configuration based on the system
     const INPUT_FIELDS = system === 'V8DIGITAL' ? V8DIGITAL_INPUT_FIELDS : UNNO_INPUT_FIELDS;
@@ -209,9 +225,13 @@ export async function processExcelFile(
                 let cellValue = (row as any[])[colIndex];
                 if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
                     // Specific formatting based on field name conventions
-                    if (inputField.toLowerCase().includes('valor') || inputField.startsWith('VAL_')) {
+                    if ( (system === 'V8DIGITAL' && (inputField.toLowerCase().includes('valor') || inputField.startsWith('VAL_'))) || 
+                         (system === 'UNNO' && (inputField.includes('Valor Bruto') || inputField.includes('Valor Líquido'))) ) 
+                    {
                         sourceRow[inputField] = formatCurrency(cellValue);
-                    } else if (inputField.toLowerCase().includes('data') || inputField.startsWith('DAT_')) {
+                    } else if ( (system === 'V8DIGITAL' && (inputField.toLowerCase().includes('data') || inputField.startsWith('DAT_'))) || 
+                                (system === 'UNNO' && (inputField.includes('Data'))) ) 
+                    {
                         sourceRow[inputField] = formatDate(cellValue);
                     } else {
                         sourceRow[inputField] = cellValue;
@@ -316,5 +336,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
