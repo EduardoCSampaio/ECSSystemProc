@@ -35,5 +35,4 @@ export default function PrataDigitalPage() {
     </div>
   );
 }
-
     
