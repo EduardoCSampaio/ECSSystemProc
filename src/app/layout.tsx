@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Seleção de Sistema",
+  title: "Processador de Dados",
   description: "Selecione um sistema para iniciar.",
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased h-full bg-background">
+      <body className="font-body antialiased h-full bg-gradient-to-br from-background to-secondary">
         {children}
         <Toaster />
       </body>

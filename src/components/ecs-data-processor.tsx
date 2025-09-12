@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from "react";
@@ -36,10 +35,10 @@ interface EcsDataProcessorProps {
 }
 
 const stepMessages: Record<ProcessStep, string> = {
-  idle: "Awaiting file upload.",
-  processing: "Processing your spreadsheet...",
-  success: "Your file is ready for download.",
-  error: "An error occurred during processing.",
+  idle: "Aguardando o envio do arquivo.",
+  processing: "Processando sua planilha...",
+  success: "Seu arquivo está pronto para download.",
+  error: "Ocorreu um erro durante o processamento.",
 };
 
 export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
@@ -51,7 +50,17 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (step === "processing") setProgress(50);
+    if (step === "processing") {
+      let currentProgress = 0;
+      const interval = setInterval(() => {
+        currentProgress += 10;
+        if (currentProgress >= 90) {
+          clearInterval(interval);
+        }
+        setProgress(currentProgress);
+      }, 200);
+      return () => clearInterval(interval);
+    }
     else if (step === "success") setProgress(100);
     else if (step === "idle" || step === "error") setProgress(0);
   }, [step]);
@@ -65,8 +74,8 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
         if (!dataUri) {
           toast({
             variant: "destructive",
-            title: "File Read Error",
-            description: "Could not read the uploaded file.",
+            title: "Erro de Leitura",
+            description: "Não foi possível ler o arquivo enviado.",
           });
           setStep("error");
           return;
@@ -80,20 +89,21 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
             try {
               const jsonData = JSON.parse(result.data);
               setProcessedData(jsonData);
+              setProgress(100);
               setStep("success");
             } catch (e) {
               toast({
                 variant: "destructive",
-                title: "Data Parse Error",
+                title: "Erro de Análise",
                 description:
-                  "Could not parse the processed data. Please try again.",
+                  "Não foi possível interpretar os dados processados.",
               });
               setStep("error");
             }
           } else {
             toast({
               variant: "destructive",
-              title: "Processing Error",
+              title: "Erro no Processamento",
               description: result.error,
             });
             setStep("error");
@@ -103,8 +113,8 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
       reader.onerror = () => {
         toast({
           variant: "destructive",
-          title: "File Read Error",
-          description: "An error occurred while reading the file.",
+          title: "Erro de Leitura",
+          description: "Ocorreu um erro ao ler o arquivo.",
         });
         setStep("error");
       };
@@ -171,15 +181,15 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
               {stepMessages.success}
             </p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              We have successfully processed the data from{" "}
-              <span className="font-semibold">{originalFileName}</span>.
+              Os dados de{" "}
+              <span className="font-semibold">{originalFileName}</span> foram processados com sucesso.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
               <Button onClick={handleReset} variant="outline">
-                <RefreshCw className="mr-2 h-4 w-4" /> Process Another File
+                <RefreshCw className="mr-2 h-4 w-4" /> Processar Outro
               </Button>
               <Button onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" /> Download File
+                <Download className="mr-2 h-4 w-4" /> Baixar Arquivo
               </Button>
             </div>
           </div>
@@ -193,16 +203,15 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
               {stepMessages.error}
             </p>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Something went wrong while processing{" "}
-              <span className="font-semibold">{originalFileName}</span>. Please
-              try again.
+             Algo deu errado ao processar {" "}
+              <span className="font-semibold">{originalFileName}</span>. Por favor, tente novamente.
             </p>
             <Button
               onClick={handleReset}
               variant="outline"
               className="mt-4"
             >
-              <RefreshCw className="mr-2 h-4 w-4" /> Try Again
+              <RefreshCw className="mr-2 h-4 w-4" /> Tentar Novamente
             </Button>
           </div>
         );
@@ -212,13 +221,13 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
   };
 
   return (
-    <Card className="w-full max-w-lg shadow-xl transition-all border-none bg-card/80 backdrop-blur-sm">
+    <Card className="w-full max-w-lg shadow-xl transition-all bg-card/80 backdrop-blur-sm border-border/50">
       <CardHeader>
-        <CardTitle className="font-headline text-center text-2xl">
-          Upload Your Excel File
+        <CardTitle className="font-headline text-center text-3xl">
+          Upload de Planilha
         </CardTitle>
-        <CardDescription className="text-center">
-          Drag & drop your file or click to select a file to begin processing.
+        <CardDescription className="text-center pt-2">
+          Arraste e solte seu arquivo ou clique para selecionar e iniciar o processamento.
         </CardDescription>
       </CardHeader>
       <CardContent className="min-h-[250px] flex items-center justify-center p-6">
