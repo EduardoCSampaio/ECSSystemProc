@@ -166,6 +166,7 @@ function formatDate(value: any): string {
 
     // If it's an Excel serial number
     if (typeof value === 'number') {
+        if (value <= 0) return ''; // Invalid Excel date number
         const excelEpoch = new Date(1899, 11, 30);
         const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
         if (!isNaN(date.getTime())) {
@@ -192,9 +193,9 @@ function formatDate(value: any): string {
             }
              // MM/DD/YYYY or MM-DD-YYYY (heuristic)
             else if (Number(p1) <= 12 && Number(p2) <= 31) { // Check if first part is a valid month
-                 date = new Date(Number(p3), Number(p1) - 1, Number(p2)); // Handles MM/DD/YYYY
+                 date = new Date(new Date().getFullYear().toString().substr(0, 2) + p3, Number(p1) - 1, Number(p2)); // Handles MM/DD/YY
             } else {
-                 date = new Date(Number(p3), Number(p2) - 1, Number(p1)); // Fallback to DD/MM/YYYY
+                 date = new Date(new Date().getFullYear().toString().substr(0, 2) + p3, Number(p2) - 1, Number(p1)); // Fallback to DD/MM/YY
             }
         } else {
              // Fallback for other formats Date can parse
@@ -241,8 +242,11 @@ function processV8Digital(data: any[]): any[] {
         newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'] || '';
         newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'] || '';
         newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'] || '';
-        const datNasc = formatDate(sourceRow['DAT_NASCIMENTO']);
-        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '01/01/1990' : datNasc;
+        let datNasc = formatDate(sourceRow['DAT_NASCIMENTO']);
+        if (!datNasc || datNasc === '00/00/0000' || datNasc.endsWith('1899')) {
+            datNasc = '01/01/1990';
+        }
+        newRow['DAT_NASCIMENTO'] = datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
@@ -316,8 +320,11 @@ function processUnno(data: any[]): any[] {
         newRow['NIC_CTR_USUARIO'] = sourceRow['E-mail'] || '';
         newRow['COD_CPF_CLIENTE'] = sourceRow['CPF/CNPJ'] || '';
         newRow['NOM_CLIENTE'] = sourceRow['Nome'] || '';
-        const datNasc = formatDate(sourceRow['Data Nascimento']);
-        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '01/01/1990' : datNasc;
+        let datNasc = formatDate(sourceRow['Data Nascimento']);
+        if (!datNasc || datNasc === '00/00/0000' || datNasc.endsWith('1899')) {
+            datNasc = '01/01/1990';
+        }
+        newRow['DAT_NASCIMENTO'] = datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
@@ -378,7 +385,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer", raw: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", raw: true, cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
@@ -427,7 +434,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
-
-    
