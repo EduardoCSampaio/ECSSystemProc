@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 
 // The fields we want to extract from the Excel file, in order.
 const REQUIRED_FIELDS = [
+  "NUM_BAN",
   "NOM_BANCO",
   "NUM_PROPOSTA",
   "NUM_CONTRATO",
@@ -109,7 +110,17 @@ export async function processExcelFile(
     for (const row of dataRows) {
       const newRow: { [key: string]: any } = {};
       let rowHasData = false;
+
+      // Add hardcoded values first
+      newRow['NUM_BAN'] = 17;
+      newRow['NOM_BANCO'] = 'V8DIGITAL';
+
       for (const requiredField of REQUIRED_FIELDS) {
+        // Skip hardcoded fields
+        if (requiredField === 'NUM_BAN' || requiredField === 'NOM_BANCO') {
+            continue;
+        }
+
         if (headerMap.hasOwnProperty(requiredField)) {
           const colIndex = headerMap[requiredField];
           let cellValue = (row as any[])[colIndex];
@@ -124,7 +135,7 @@ export async function processExcelFile(
           }
         }
       }
-       // Only add the row if it contains at least one piece of data
+       // Only add the row if it contains at least one piece of data from the file
       if (rowHasData) {
         extractedData.push(newRow);
       }
