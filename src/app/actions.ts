@@ -70,7 +70,9 @@ function formatCurrency(value: any): string | any {
 function formatDate(value: any): string | any {
     // Check if it's a valid date object
     if (value instanceof Date && !isNaN(value.getTime())) {
-        return format(value, 'dd/MM/yyyy');
+        const formattedDate = format(value, 'dd/MM/yyyy');
+        if (formattedDate === '30/11/1899') return null; // Excel's epoch can be weird
+        return formattedDate;
     }
     // Excel might return a number, try to convert it
     if (typeof value === 'number' && value > 0) {
@@ -78,7 +80,9 @@ function formatDate(value: any): string | any {
         const excelEpoch = new Date(1899, 11, 30);
         const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
         if (!isNaN(date.getTime())) {
-             return format(date, 'dd/MM/yyyy');
+             const formattedDate = format(date, 'dd/MM/yyyy');
+             if (formattedDate === '30/11/1899') return null;
+             return formattedDate;
         }
     }
     // If it's a string, just return it as is, or try to parse if needed.
@@ -161,6 +165,11 @@ export async function processExcelFile(
       }
        // Only add the row if it contains at least one piece of data from the file
       if (rowHasData) {
+        // Handle DAT_NASCIMENTO default value
+        const datNasc = newRow['DAT_NASCIMENTO'];
+        if (!datNasc || datNasc === '00/00/0000') {
+          newRow['DAT_NASCIMENTO'] = '25/01/1990';
+        }
         extractedData.push(newRow);
       }
     }
