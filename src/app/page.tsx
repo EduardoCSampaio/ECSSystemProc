@@ -93,6 +93,9 @@ export default function Home() {
             <Button asChild size="lg">
               <Link href="/digio">DIGIO</Link>
             </Button>
+            <Button asChild size="lg" variant="secondary">
+              <Link href="/2tech">2TECH</Link>
+            </Button>
           </CardContent>
         </Card>
       </main>

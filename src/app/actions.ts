@@ -127,7 +127,7 @@ const GENERIC_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 // Generic Helper Functions
 // =================================================================
 
-type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP" | "QUEROMAIS" | "LEV" | "FACTA" | "PRESENCABANK" | "QUALIBANKING" | "PAN" | "BRB-INCONTA" | "NEOCREDITO" | "PRATA DIGITAL" | "PHTECH" | "TOTALCASH" | "AMIGOZ" | "BRB ESTEIRA" | "BMG" | "INTER" | "DIGIO";
+type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP" | "QUEROMAIS" | "LEV" | "FACTA" | "PRESENCABANK" | "QUALIBANKING" | "PAN" | "BRB-INCONTA" | "NEOCREDITO" | "PRATA DIGITAL" | "PHTECH" | "TOTALCASH" | "AMIGOZ" | "BRB ESTEIRA" | "BMG" | "INTER" | "DIGIO" | "2TECH";
 
 /**
  * Formats a value into a Brazilian currency string (BRL).
@@ -455,6 +455,7 @@ export async function processExcelFile(
         case 'BMG':
         case 'INTER':
         case 'DIGIO':
+        case '2TECH':
             processedData = processGeneric(filteredData, system);
             outputFields = GENERIC_OUTPUT_FIELDS;
             break;
