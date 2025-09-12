@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export default function FactaPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+      <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ClipboardPaste className="h-7 w-7 text-primary" />

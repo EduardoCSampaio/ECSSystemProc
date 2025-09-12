@@ -7,13 +7,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FileText } from "lucide-react";
+import { FileText, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
+      <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileText className="h-7 w-7 text-primary" />
@@ -21,7 +21,15 @@ export default function Home() {
               Seleção de Sistema
             </h1>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline">
+              <Link href="/dashboard">
+                <LayoutDashboard className="mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">
@@ -57,16 +65,16 @@ export default function Home() {
             {/* <Button asChild size="lg">
               <Link href="/presencabank">PRESENÇABANK</Link>
             </Button> */}
-            <Button asChild size="lg" variant="secondary">
+            <Button asChild size="lg">
               <Link href="/qualibanking">QUALIBANKING</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/pan">PAN</Link>
             </Button>
-            <Button asChild size="lg" variant="secondary">
+            <Button asChild size="lg">
               <Link href="/brb-inconta">BRB-INCONTA</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/neocredito">NEOCREDITO</Link>
             </Button>
             {/* <Button asChild size="lg" variant="secondary">
@@ -75,7 +83,7 @@ export default function Home() {
             <Button asChild size="lg">
               <Link href="/phtech">PHTECH</Link>
             </Button> */}
-            <Button asChild size="lg" variant="secondary">
+            <Button asChild size="lg">
               <Link href="/totalcash">TOTALCASH</Link>
             </Button>
             {/* <Button asChild size="lg">

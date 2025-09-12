@@ -3,6 +3,7 @@
 import { useState, useTransition, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { processExcelFile } from "@/app/actions";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { FileUpload } from "@/components/file-upload";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
   RefreshCw,
   FileSpreadsheet,
 } from "lucide-react";
+import type { ProcessHistoryItem } from "@/app/dashboard/page";
 
 type ProcessStep =
   | "idle"
@@ -48,6 +50,7 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
   const [originalFileName, setOriginalFileName] = useState("");
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [history, setHistory] = useLocalStorage<ProcessHistoryItem[]>('processHistory', []);
 
   useEffect(() => {
     if (step === "processing") {
@@ -89,6 +92,16 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
             try {
               const jsonData = JSON.parse(result.data);
               setProcessedData(jsonData);
+              
+              // Add to history
+              const newHistoryItem: ProcessHistoryItem = {
+                id: crypto.randomUUID(),
+                system: system,
+                fileName: file.name,
+                processedAt: new Date().toISOString(),
+              };
+              setHistory([newHistoryItem, ...history]);
+
               setProgress(100);
               setStep("success");
             } catch (e) {
@@ -120,7 +133,7 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
       };
       reader.readAsDataURL(file);
     },
-    [startTransition, toast, system]
+    [startTransition, toast, system, history, setHistory]
   );
 
   const handleDownload = () => {
