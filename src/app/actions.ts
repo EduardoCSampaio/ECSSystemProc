@@ -67,6 +67,7 @@ const V8DIGITAL_OUTPUT_FIELDS = [
     "VAL_SALDO_RECOMPRA",
     "VAL_SALDO_REFINANCIAMENTO",
     "VAL_LIQUIDO",
+    "COLUNA_VAZIA_PLACEHOLDER",
     "DAT_CREDITO",
     "DAT_CONFIRMACAO",
     "VAL_REPASSE",
@@ -238,8 +239,8 @@ function processV8Digital(data: any[]): any[] {
         // Map and transform data based on V8Digital rules
         newRow['NUM_BANCO'] = 17;
         newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
-        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'];
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
@@ -318,8 +319,8 @@ function processUnno(data: any[]): any[] {
         // Map and transform data based on UNNO rules
         newRow['NUM_BANCO'] = 9209;
         newRow['NOM_BANCO'] = 'UNNO';
-        newRow['NUM_PROPOSTA'] = sourceRow['CCB'] || '';
-        newRow['NUM_CONTRATO'] = sourceRow['CCB'] || ''; // Assuming contract number is the same as proposal for UNNO
+        newRow['NUM_PROPOSTA'] = sourceRow['CCB'];
+        newRow['NUM_CONTRATO'] = sourceRow['CCB']; // Assuming contract number is the same as proposal for UNNO
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['Tabela'] || '';
@@ -475,12 +476,27 @@ export async function processExcelFile(
     const finalData = processedData.map(row => {
         const orderedRow: any = {};
         for(const field of outputFields) {
-            orderedRow[field] = row.hasOwnProperty(field) ? row[field] : '';
+            // Specifically handle our placeholder for the empty column
+            if (field === 'COLUNA_VAZIA_PLACEHOLDER') {
+                orderedRow[''] = ''; // Set an empty key for the column header
+            } else {
+                orderedRow[field] = row.hasOwnProperty(field) ? row[field] : '';
+            }
         }
+        // Then, remove the placeholder key so it doesn't appear in the final JSON if it was added
+        delete orderedRow['COLUNA_VAZIA_PLACEHOLDER'];
         return orderedRow;
     });
+    
+    // Create a new worksheet, manually setting the header to handle the empty column
+    const finalWorksheet = XLSX.utils.json_to_sheet(finalData, { 
+        header: outputFields.map(field => field === 'COLUNA_VAZIA_PLACEHOLDER' ? '' : field) 
+    });
 
-    return { success: true, data: JSON.stringify(finalData) };
+    const finalJsonData = XLSX.utils.sheet_to_json(finalWorksheet);
+
+
+    return { success: true, data: JSON.stringify(finalJsonData) };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
     console.error("Processing Error:", errorMessage, error);

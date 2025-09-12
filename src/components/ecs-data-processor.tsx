@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from "react";
@@ -138,7 +139,10 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
 
   const handleDownload = () => {
     if (!processedData || processedData.length === 0) return;
+
+    // The data received from server action is already structured with the empty column header.
     const ws = XLSX.utils.json_to_sheet(processedData);
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados Processados");
 
