@@ -91,21 +91,20 @@ const OUTPUT_FIELDS = [
 
 
 function formatCurrency(value: any): string | any {
-  let num;
-  const sValue = String(value).trim();
+  if (value === null || value === undefined || value === '') return '';
+  
+  // Start by converting to a string and cleaning it up.
+  let sValue = String(value).trim();
 
-  // If it's already a number, just use it.
-  if (typeof value === 'number') {
-    num = value;
-  } else {
-    // It's a string, let's process it.
-    // It might be in "1.234,56" or "1234,56" format.
-    // We remove dots and replace comma with a dot for parseFloat.
-    const cleanValue = sValue.replace(/\./g, '').replace(',', '.');
-    num = parseFloat(cleanValue);
-  }
+  // The value from Excel might come as a number (e.g., 85.4) or a string ("85,4").
+  // We need to standardize it to use a dot as the decimal separator for parseFloat.
+  // This replaces the Brazilian comma decimal separator with a dot.
+  // It does NOT remove dots that might be thousand separators.
+  sValue = sValue.replace(',', '.');
 
-  // If it's not a valid number after parsing, return the original value.
+  const num = parseFloat(sValue);
+  
+  // If it's not a valid number after parsing, return the original string value.
   if (isNaN(num)) {
     return value;
   }
@@ -159,7 +158,9 @@ export async function processExcelFile(
     if (!worksheet) {
       throw new Error("No worksheet found in the Excel file.");
     }
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    // Using {defval: ''} will ensure all empty cells are read as empty strings
+    // Using {raw: false} ensures we get the formatted text, not the raw value
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
 
     // 3. Process headers and map columns
     const headers = jsonData[0] as string[];
@@ -299,3 +300,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
