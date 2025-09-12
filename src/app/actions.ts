@@ -235,15 +235,11 @@ function processV8Digital(data: any[]): any[] {
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         
-        // Clean and convert proposal and contract numbers to string
-        const numProposta = sourceRow['NUM_PROPOSTA'] ? String(sourceRow['NUM_PROPOSTA']) : '';
-        const numContrato = sourceRow['NUM_CONTRATO'] ? String(sourceRow['NUM_CONTRATO']) : '';
-
         // Map and transform data based on V8Digital rules
         newRow['NUM_BANCO'] = 17;
         newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = numProposta;
-        newRow['NUM_CONTRATO'] = numContrato;
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
@@ -319,14 +315,11 @@ function processUnno(data: any[]): any[] {
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
-        // Clean and convert proposal and contract numbers to string
-        const numProposta = sourceRow['CCB'] ? String(sourceRow['CCB']) : '';
-
         // Map and transform data based on UNNO rules
         newRow['NUM_BANCO'] = 9209;
         newRow['NOM_BANCO'] = 'UNNO';
-        newRow['NUM_PROPOSTA'] = numProposta;
-        newRow['NUM_CONTRATO'] = numProposta; // Assuming contract number is the same as proposal for UNNO
+        newRow['NUM_PROPOSTA'] = sourceRow['CCB'] || '';
+        newRow['NUM_CONTRATO'] = sourceRow['CCB'] || ''; // Assuming contract number is the same as proposal for UNNO
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['Tabela'] || '';
@@ -495,4 +488,5 @@ export async function processExcelFile(
   }
 }
 
+    
     
