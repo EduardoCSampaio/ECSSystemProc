@@ -111,12 +111,18 @@ const UNNO_INPUT_FIELDS = [
 
 const UNNO_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
+// =================================================================
+// GLM-CREFISACP Configuration
+// =================================================================
+const GLM_CREFISACP_INPUT_FIELDS = []; // TODO: Define input fields
+const GLM_CREFISACP_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
 
 // =================================================================
 // Generic Helper Functions
 // =================================================================
 
-type System = "V8DIGITAL" | "UNNO";
+type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP";
 
 /**
  * Formats a value into a Brazilian currency string (BRL).
@@ -360,7 +366,7 @@ function processUnno(data: any[]): any[] {
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
-        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_GRUPO_UNidade_EMPRESA'] = '';
         newRow['COD_TIPO_FUNCAO'] = '';
         newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
         newRow['COD_LOJA_DIGITACAO'] = '';
@@ -369,6 +375,19 @@ function processUnno(data: any[]): any[] {
     });
 }
 
+// =================================================================
+// GLM-CREFISACP Processing Logic
+// =================================================================
+function processGlmCrefisacp(data: any[]): any[] {
+    // TODO: Implement processing logic for GLM-CREFISACP
+    return data.map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+        // Placeholder logic - just returns an empty object for each field
+        GLM_CREFISACP_OUTPUT_FIELDS.forEach(field => newRow[field] = '');
+        newRow['NOM_BANCO'] = 'GLM-CREFISACP';
+        return newRow;
+    });
+}
 
 // =================================================================
 // Main Processing Function
@@ -404,11 +423,17 @@ export async function processExcelFile(
     }
 
     let processedData: any[];
+    let outputFields: string[];
 
     if (system === 'V8DIGITAL') {
         processedData = processV8Digital(filteredData);
+        outputFields = V8DIGITAL_OUTPUT_FIELDS;
     } else if (system === 'UNNO') {
         processedData = processUnno(filteredData);
+        outputFields = UNNO_OUTPUT_FIELDS;
+    } else if (system === 'GLM-CREFISACP') {
+        processedData = processGlmCrefisacp(filteredData);
+        outputFields = GLM_CREFISACP_OUTPUT_FIELDS;
     } else {
         throw new Error(`Unknown system: ${system}`);
     }
@@ -418,7 +443,6 @@ export async function processExcelFile(
     }
 
     // Ensure final output has all columns in the correct order
-    const outputFields = system === 'V8DIGITAL' ? V8DIGITAL_OUTPUT_FIELDS : UNNO_OUTPUT_FIELDS;
     const finalData = processedData.map(row => {
         const orderedRow: any = {};
         for(const field of outputFields) {

@@ -25,7 +25,7 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-border/50">
+        <Card className="w-full max-w-lg shadow-xl bg-card/80 backdrop-blur-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-center text-3xl font-headline">
               Escolha um sistema
@@ -35,7 +35,7 @@ export default function Home() {
               propostas.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row justify-center items-center gap-4 p-6">
+          <CardContent className="flex flex-wrap justify-center items-center gap-4 p-6">
             <Button asChild size="lg" className="w-full sm:w-auto">
               <Link href="/v8digital">V8DIGITAL</Link>
             </Button>
@@ -46,6 +46,14 @@ export default function Home() {
               className="w-full sm:w-auto"
             >
               <Link href="/unno">UNNO</Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
+              <Link href="/glm-crefisacp">GLM - CREFISACP</Link>
             </Button>
           </CardContent>
         </Card>

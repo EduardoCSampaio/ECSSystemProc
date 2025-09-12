@@ -28,7 +28,7 @@ type ProcessStep =
   | "success"
   | "error";
 
-type System = "V8DIGITAL" | "UNNO";
+type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP";
 
 interface EcsDataProcessorProps {
     system: System;
