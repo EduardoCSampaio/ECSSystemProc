@@ -69,16 +69,16 @@ export default function Home() {
             <Button asChild size="lg">
               <Link href="/neocredito">NEOCREDITO</Link>
             </Button>
-            <Button asChild size="lg" variant="secondary">
+            {/* <Button asChild size="lg" variant="secondary">
               <Link href="/prata-digital">PRATA DIGITAL</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/phtech">PHTECH</Link>
-            </Button>
+            </Button> */}
             <Button asChild size="lg" variant="secondary">
               <Link href="/totalcash">TOTALCASH</Link>
             </Button>
-            <Button asChild size="lg">
+            {/* <Button asChild size="lg">
               <Link href="/amigoz">AMIGOZ</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
@@ -92,7 +92,7 @@ export default function Home() {
             </Button>
             <Button asChild size="lg">
               <Link href="/digio">DIGIO</Link>
-            </Button>
+            </Button> */}
             <Button asChild size="lg" variant="secondary">
               <Link href="/2tech">2TECH</Link>
             </Button>
