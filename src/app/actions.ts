@@ -110,7 +110,11 @@ const UNNO_INPUT_FIELDS = [
 ];
 
 // Placeholder for UNNO output fields. The user will provide the final structure later.
-const UNNO_OUTPUT_FIELDS = UNNO_INPUT_FIELDS;
+const UNNO_OUTPUT_FIELDS = [
+    "NUM_BANCO",
+    "NOM_BANCO",
+    ...UNNO_INPUT_FIELDS
+];
 
 
 // =================================================================
@@ -191,7 +195,7 @@ export async function processExcelFile(
       throw new Error("No worksheet found in the Excel file.");
     }
     
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false, dateNF: 'dd/MM/yyyy' });
 
     // Determine configuration based on the system
     const INPUT_FIELDS = system === 'V8DIGITAL' ? V8DIGITAL_INPUT_FIELDS : UNNO_INPUT_FIELDS;
@@ -307,11 +311,12 @@ export async function processExcelFile(
             newRow['VAL_SEGURO'] = '';
             processedData.push(newRow);
         } else if (system === 'UNNO') {
-            // For now, UNNO just outputs what it reads. This will be updated later.
             const newRow: { [key: string]: any } = {};
-             for (const field of UNNO_OUTPUT_FIELDS) {
+            newRow['NUM_BANCO'] = 9209;
+            newRow['NOM_BANCO'] = 'UNNO';
+            for (const field of UNNO_INPUT_FIELDS) {
                  newRow[field] = sourceRow[field] || '';
-             }
+            }
             processedData.push(newRow);
         }
       }
@@ -336,3 +341,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
