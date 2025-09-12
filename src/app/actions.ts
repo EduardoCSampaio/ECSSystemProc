@@ -235,11 +235,15 @@ function processV8Digital(data: any[]): any[] {
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         
+        // Clean and convert proposal and contract numbers
+        const numProposta = sourceRow['NUM_PROPOSTA'] ? Number(String(sourceRow['NUM_PROPOSTA']).replace(/\D/g, '')) : '';
+        const numContrato = sourceRow['NUM_CONTRATO'] ? Number(String(sourceRow['NUM_CONTRATO']).replace(/\D/g, '')) : '';
+
         // Map and transform data based on V8Digital rules
         newRow['NUM_BANCO'] = 17;
         newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
-        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
+        newRow['NUM_PROPOSTA'] = numProposta;
+        newRow['NUM_CONTRATO'] = numContrato;
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
@@ -315,11 +319,14 @@ function processUnno(data: any[]): any[] {
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
+        // Clean and convert proposal and contract numbers
+        const numProposta = sourceRow['CCB'] ? Number(String(sourceRow['CCB']).replace(/\D/g, '')) : '';
+
         // Map and transform data based on UNNO rules
         newRow['NUM_BANCO'] = 9209;
         newRow['NOM_BANCO'] = 'UNNO';
-        newRow['NUM_PROPOSTA'] = sourceRow['CCB'] || '';
-        newRow['NUM_CONTRATO'] = sourceRow['CCB'] || '';
+        newRow['NUM_PROPOSTA'] = numProposta;
+        newRow['NUM_CONTRATO'] = numProposta;
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['Tabela'] || '';
