@@ -120,30 +120,24 @@ type System = "V8DIGITAL" | "UNNO";
 
 /**
  * Formats a value into a Brazilian currency string (BRL).
- * It handles values that are numbers or strings with '.' or ',' as decimal separators.
+ * It correctly handles numbers and strings with pt-BR formatting (e.g., "1.234,56").
  * @param value The value to format.
  * @returns A string in BRL currency format (e.g., "1.234,56") or the original value if parsing fails.
  */
-function formatCurrency(value: any): string | any {
-    if (value === null || value === undefined || value === '') return '';
+function formatCurrency(value: any): string {
+    if (value === null || value === undefined || value === '') {
+        return '';
+    }
+
     let sValue = String(value).trim();
 
-    // Standardize to use '.' as the decimal separator for parseFloat
-    // Handles "1.234,56" -> "1234.56" and "1,234.56" -> "1234.56"
-    if (sValue.includes(',') && sValue.includes('.')) {
-        if (sValue.indexOf('.') < sValue.indexOf(',')) {
-            sValue = sValue.replace(/\./g, '').replace(',', '.');
-        } else {
-            sValue = sValue.replace(/,/g, '');
-        }
-    } else if (sValue.includes(',')) {
-        sValue = sValue.replace(',', '.');
-    }
+    // Clean the string for parseFloat: remove thousand separators (.) and replace decimal comma (,) with a dot (.)
+    sValue = sValue.replace(/\./g, '').replace(',', '.');
     
     const num = parseFloat(sValue);
     
     if (isNaN(num)) {
-        return value; // Return original value if not a valid number
+        return String(value); // Return original string value if not a valid number
     }
     
     // Format to pt-BR standard, which uses ',' for decimal and '.' for thousands.
@@ -153,67 +147,66 @@ function formatCurrency(value: any): string | any {
     });
 }
 
+
 /**
  * Parses and formats a date value into 'dd/MM/yyyy' format.
- * It handles JS Date objects, Excel's numeric date format, and various string formats
- * like 'MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'.
+ * It handles JS Date objects, Excel's numeric date format, and common string formats.
  * @param value The date value to format.
  * @returns A formatted date string or the original value if parsing fails.
  */
-function formatDate(value: any): string | any {
+function formatDate(value: any): string {
     if (!value) return '';
 
-    try {
-        if (value instanceof Date && !isNaN(value.getTime())) {
-            const tzOffset = value.getTimezoneOffset() * 60000;
-            const adjustedDate = new Date(value.getTime() + tzOffset);
-            return format(adjustedDate, 'dd/MM/yyyy');
-        }
-
-        if (typeof value === 'number') {
-            const excelEpoch = new Date(1899, 11, 30);
-            const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
-            const tzOffset = date.getTimezoneOffset() * 60000;
-            const adjustedDate = new Date(date.getTime() + tzOffset);
-            if (!isNaN(adjustedDate.getTime())) {
-                return format(adjustedDate, 'dd/MM/yyyy');
-            }
-        }
-        
-        if (typeof value === 'string') {
-            const datePart = value.split(' ')[0];
-            let date;
-            
-            // Try parsing DD/MM/YYYY
-            const matchDMY = datePart.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-            if (matchDMY) {
-                 // Check if the year is the first group, indicating YYYY-MM-DD
-                 if (matchDMY[0].length === 4) {
-                    date = new Date(Number(matchDMY[0]), Number(matchDMY[1]) - 1, Number(matchDMY[2]));
-                } else if(matchDMY[2].length === 4){
-                     // Try parsing MM/DD/YYYY if the first part is a valid month
-                    if (Number(matchDMY[0]) <= 12 && Number(matchDMY[1]) > 12) {
-                       date = new Date(Number(matchDMY[2]), Number(matchDMY[0]) - 1, Number(matchDMY[1]));
-                    } else {
-                       date = new Date(Number(matchDMY[2]), Number(matchDMY[1]) - 1, Number(matchDMY[0]));
-                    }
-                }
-            } else {
-                // Fallback for ISO format like YYYY-MM-DD
-                date = new Date(datePart);
-            }
-
-            if (date && !isNaN(date.getTime())) {
-                const tzOffset = date.getTimezoneOffset() * 60000;
-                const adjustedDate = new Date(date.getTime() + tzOffset);
-                return format(adjustedDate, 'dd/MM/yyyy');
-            }
-        }
-    } catch(e) {
-        // Fallback to original value on any error
+    // If it's already a valid Date object
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        // Adjust for timezone offset before formatting
+        const adjustedDate = new Date(value.getTime() + (value.getTimezoneOffset() * 60000));
+        return format(adjustedDate, 'dd/MM/yyyy');
     }
 
-    return value;
+    // If it's an Excel serial number
+    if (typeof value === 'number') {
+        const excelEpoch = new Date(1899, 11, 30);
+        const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+        if (!isNaN(date.getTime())) {
+            const adjustedDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+            return format(adjustedDate, 'dd/MM/yyyy');
+        }
+    }
+    
+    if (typeof value === 'string') {
+        // Normalize string: remove time part, replace separators
+        const datePart = value.split(' ')[0];
+        const parts = datePart.split(/[/-]/);
+        let date: Date | undefined;
+
+        if (parts.length === 3) {
+            const [p1, p2, p3] = parts;
+            // YYYY-MM-DD or YYYY/MM/DD
+            if (p1.length === 4) {
+                date = new Date(Number(p1), Number(p2) - 1, Number(p3));
+            } 
+            // DD/MM/YYYY or DD-MM-YYYY
+            else if (p3.length === 4) {
+                 date = new Date(Number(p3), Number(p2) - 1, Number(p1));
+            }
+             // MM/DD/YYYY or MM-DD-YYYY (heuristic)
+            else if (Number(p1) <= 12) {
+                 date = new Date(Number(p3), Number(p1) - 1, Number(p2));
+            }
+        } else {
+             // Fallback for other formats Date can parse
+             date = new Date(value);
+        }
+
+        if (date && !isNaN(date.getTime())) {
+            const adjustedDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60000));
+            return format(adjustedDate, 'dd/MM/yyyy');
+        }
+    }
+    
+    // Return the original value if all parsing attempts fail
+    return String(value);
 }
 
 
@@ -431,5 +424,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
