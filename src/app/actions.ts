@@ -66,7 +66,6 @@ const OUTPUT_FIELDS = [
     "VAL_SALDO_RECOMPRA",
     "VAL_SALDO_REFINANCIAMENTO",
     "VAL_LIQUIDO",
-    "PCR_PMT_PAGO_REF", // This field was in the original list, but not in the final template. Keeping it here for now.
     "DAT_CREDITO",
     "DAT_CONFIRMACAO",
     "VAL_REPASSE",
@@ -95,12 +94,13 @@ function formatCurrency(value: any): string | any {
   let num;
   const sValue = String(value).trim();
 
-  // Check if it's already a valid number.
+  // If it's already a number, just use it.
   if (typeof value === 'number') {
     num = value;
   } else {
     // It's a string, let's process it.
-    // Replace thousand separators for pt-BR (dot) and set decimal to dot.
+    // It might be in "1.234,56" or "1234,56" format.
+    // We remove dots and replace comma with a dot for parseFloat.
     const cleanValue = sValue.replace(/\./g, '').replace(',', '.');
     num = parseFloat(cleanValue);
   }
@@ -252,7 +252,6 @@ export async function processExcelFile(
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = sourceRow['VAL_LIQUIDO'] || '';
-        newRow['PCR_PMT_PAGO_REF'] = sourceRow['PCR_PMT_PAGO_REF'] || '';
         newRow['DAT_CREDITO'] = sourceRow['DAT_CREDITO'] || '';
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
