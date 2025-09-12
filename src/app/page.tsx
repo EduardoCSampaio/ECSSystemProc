@@ -42,7 +42,6 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              variant="secondary"
               className="w-full sm:w-auto"
             >
               <Link href="/unno">UNNO</Link>
@@ -50,7 +49,6 @@ export default function Home() {
             <Button
               asChild
               size="lg"
-              variant="secondary"
               className="w-full sm:w-auto"
             >
               <Link href="/glm-crefisacp">GLM - CREFISACP</Link>
