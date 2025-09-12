@@ -170,6 +170,13 @@ export async function processExcelFile(
         if (!datNasc || datNasc === '00/00/0000') {
           newRow['DAT_NASCIMENTO'] = '25/01/1990';
         }
+
+        // Handle DSC_TIPO_PROPOSTA_EMPRESTIMO transformation
+        const dscTipo = newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
+        if (dscTipo === 'Margem Livre (Novo)') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
+        }
+        
         extractedData.push(newRow);
       }
     }
