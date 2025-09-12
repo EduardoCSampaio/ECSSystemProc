@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { FileText } from "lucide-react";
 import Link from "next/link";
 
@@ -13,11 +14,14 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center gap-3">
-          <FileText className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-headline font-bold text-foreground">
-            Seleção de Sistema
-          </h1>
+        <div className="container mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FileText className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl font-headline font-bold text-foreground">
+              Seleção de Sistema
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">
@@ -35,7 +39,12 @@ export default function Home() {
             <Button asChild size="lg" className="w-full sm:w-auto">
               <Link href="/v8digital">V8DIGITAL</Link>
             </Button>
-            <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
+            <Button
+              asChild
+              size="lg"
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
               <Link href="/unno">UNNO</Link>
             </Button>
           </CardContent>

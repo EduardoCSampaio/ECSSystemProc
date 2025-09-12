@@ -2,6 +2,7 @@ import { EcsDataProcessor } from "@/components/ecs-data-processor";
 import { ClipboardPaste, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function V8DigitalPage() {
   return (
@@ -14,12 +15,15 @@ export default function V8DigitalPage() {
               V8DIGITAL - Processador de Propostas
             </h1>
           </div>
-          <Button asChild variant="outline">
-            <Link href="/">
-              <ArrowLeft className="mr-2" />
-              Voltar
-            </Link>
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button asChild variant="outline">
+              <Link href="/">
+                <ArrowLeft className="mr-2" />
+                Voltar
+              </Link>
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">

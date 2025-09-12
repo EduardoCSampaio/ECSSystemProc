@@ -42,6 +42,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 224 71% 4%;
     --foreground: 215 20% 97%;
@@ -58,7 +59,7 @@ body {
     --accent: 215 28% 17%;
     --accent-foreground: 215 20% 97%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
     --border: 215 28% 17%;
     --input: 215 28% 17%;
     --ring: 217 91% 60%;
