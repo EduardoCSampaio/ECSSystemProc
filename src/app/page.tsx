@@ -30,9 +30,12 @@ export default function Home() {
               Cada sistema possui funcionalidades específicas.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center p-6">
+          <CardContent className="flex flex-col sm:flex-row justify-center items-center gap-4 p-6">
             <Button asChild size="lg">
               <Link href="/v8digital">V8DIGITAL</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/unno">UNNO</Link>
             </Button>
           </CardContent>
         </Card>
