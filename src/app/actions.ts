@@ -242,7 +242,7 @@ function processV8Digital(data: any[]): any[] {
         newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'] || '';
         newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'] || '';
         const datNasc = formatDate(sourceRow['DAT_NASCIMENTO']);
-        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '25/01/1990' : datNasc;
+        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '01/01/1990' : datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
@@ -316,7 +316,8 @@ function processUnno(data: any[]): any[] {
         newRow['NIC_CTR_USUARIO'] = sourceRow['E-mail'] || '';
         newRow['COD_CPF_CLIENTE'] = sourceRow['CPF/CNPJ'] || '';
         newRow['NOM_CLIENTE'] = sourceRow['Nome'] || '';
-        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['Data Nascimento']);
+        const datNasc = formatDate(sourceRow['Data Nascimento']);
+        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '01/01/1990' : datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
@@ -426,5 +427,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
 
     
