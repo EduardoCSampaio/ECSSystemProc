@@ -187,19 +187,19 @@ function formatDate(value: any): string | any {
             // Try parsing DD/MM/YYYY
             const matchDMY = datePart.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
             if (matchDMY) {
-                date = new Date(Number(matchDMY[2]), Number(matchDMY[1]) - 1, Number(matchDMY[0]));
                  // Check if the year is the first group, indicating YYYY-MM-DD
                  if (matchDMY[0].length === 4) {
                     date = new Date(Number(matchDMY[0]), Number(matchDMY[1]) - 1, Number(matchDMY[2]));
                 } else if(matchDMY[2].length === 4){
                      // Try parsing MM/DD/YYYY if the first part is a valid month
-                    if (Number(matchDMY[0]) <= 12) {
+                    if (Number(matchDMY[0]) <= 12 && Number(matchDMY[1]) > 12) {
                        date = new Date(Number(matchDMY[2]), Number(matchDMY[0]) - 1, Number(matchDMY[1]));
                     } else {
                        date = new Date(Number(matchDMY[2]), Number(matchDMY[1]) - 1, Number(matchDMY[0]));
                     }
                 }
             } else {
+                // Fallback for ISO format like YYYY-MM-DD
                 date = new Date(datePart);
             }
 
@@ -357,7 +357,7 @@ function processUnno(data: any[]): any[] {
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
-        newRow['COD_GRUPO_UNidade_EMPRESA'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_TIPO_FUNCAO'] = '';
         newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
         newRow['COD_LOJA_DIGITACAO'] = '';
@@ -390,7 +390,7 @@ export async function processExcelFile(
     }
     
     // Convert sheet to JSON, reading all values as is.
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: null });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: null });
 
     // Filter out rows that are completely empty
     const filteredData = jsonData.filter(row => 
@@ -431,3 +431,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
