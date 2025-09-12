@@ -168,7 +168,7 @@ function formatDate(value: any): string | any {
       if (typeof value === 'string') {
           const datePart = value.split(' ')[0]; // Remove time part if it exists
           let date;
-          // Try parsing MM/DD/YYYY
+          // Try parsing MM/DD/YYYY - common in US formats or automatic conversions
           if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(datePart)) {
               const parts = datePart.split('/');
               // new Date(year, month-1, day)
@@ -211,6 +211,7 @@ export async function processExcelFile(
       throw new Error("No worksheet found in the Excel file.");
     }
     
+    // Read all cells as raw text to avoid auto-parsing issues
     const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', rawNumbers: false });
 
     // Determine configuration based on the system
@@ -412,5 +413,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
