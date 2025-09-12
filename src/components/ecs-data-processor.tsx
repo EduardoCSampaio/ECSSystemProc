@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useCallback, useEffect } from "react";
@@ -28,6 +29,12 @@ type ProcessStep =
   | "success"
   | "error";
 
+type System = "V8DIGITAL" | "UNNO";
+
+interface EcsDataProcessorProps {
+    system: System;
+}
+
 const stepMessages: Record<ProcessStep, string> = {
   idle: "Awaiting file upload.",
   processing: "Processing your spreadsheet...",
@@ -35,7 +42,7 @@ const stepMessages: Record<ProcessStep, string> = {
   error: "An error occurred during processing.",
 };
 
-export function EcsDataProcessor() {
+export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
   const [step, setStep] = useState<ProcessStep>("idle");
   const [progress, setProgress] = useState(0);
   const [processedData, setProcessedData] = useState<any[] | null>(null);
@@ -67,7 +74,7 @@ export function EcsDataProcessor() {
 
         startTransition(async () => {
           setStep("processing");
-          const result = await processExcelFile(dataUri);
+          const result = await processExcelFile(dataUri, system);
 
           if (result.success) {
             try {
@@ -103,7 +110,7 @@ export function EcsDataProcessor() {
       };
       reader.readAsDataURL(file);
     },
-    [startTransition, toast]
+    [startTransition, toast, system]
   );
 
   const handleDownload = () => {
@@ -112,7 +119,7 @@ export function EcsDataProcessor() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados Processados");
 
-    const bankName = processedData[0]?.NOM_BANCO || 'BANCO';
+    const bankName = processedData[0]?.NOM_BANCO || system;
     const today = new Date();
     const day = String(today.getDate()).padStart(2, '0');
     const month = String(today.getMonth() + 1).padStart(2, '0');

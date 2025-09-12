@@ -1,3 +1,4 @@
+
 import { EcsDataProcessor } from "@/components/ecs-data-processor";
 import { FileCog } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +25,7 @@ export default function UnnoPage() {
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">
-        <EcsDataProcessor />
+        <EcsDataProcessor system="UNNO" />
       </main>
       <footer className="p-4 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} ECS System. All rights reserved.
@@ -32,3 +33,5 @@ export default function UnnoPage() {
     </div>
   );
 }
+
+    

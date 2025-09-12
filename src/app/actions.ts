@@ -4,8 +4,10 @@
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
-// The fields we need from the uploaded Excel file.
-const INPUT_FIELDS = [
+// =================================================================
+// V8DIGITAL Configuration
+// =================================================================
+const V8DIGITAL_INPUT_FIELDS = [
   "NUM_PROPOSTA",
   "NUM_CONTRATO",
   "DSC_TIPO_PROPOSTA_EMPRESTIMO",
@@ -25,8 +27,7 @@ const INPUT_FIELDS = [
   "DSC_TIPO_FORMULARIO_EMPRESTIMO",
 ];
 
-// The full list of fields for the output file, in the correct order.
-const OUTPUT_FIELDS = [
+const V8DIGITAL_OUTPUT_FIELDS = [
     "NUM_BANCO",
     "NOM_BANCO",
     "NUM_PROPOSTA",
@@ -90,26 +91,46 @@ const OUTPUT_FIELDS = [
 ];
 
 
+// =================================================================
+// UNNO Configuration
+// =================================================================
+const UNNO_INPUT_FIELDS = [
+  "CCB",
+  "Data de Digitação",
+  "Data do Desembolso",
+  "CPF/CNPJ",
+  "Nome",
+  "Tabela",
+  "Parcelas",
+  "Valor Bruto",
+  "Valor Líquido",
+  "E-mail",
+  "Status",
+  "Data Nascimento",
+];
+
+// Placeholder for UNNO output fields. The user will provide the final structure later.
+const UNNO_OUTPUT_FIELDS = UNNO_INPUT_FIELDS;
+
+
+// =================================================================
+// Generic Processing Functions
+// =================================================================
+
+type System = "V8DIGITAL" | "UNNO";
+
 function formatCurrency(value: any): string | any {
   if (value === null || value === undefined || value === '') return '';
   
-  // Start by converting to a string and cleaning it up.
   let sValue = String(value).trim();
-
-  // The value from Excel might come as a number (e.g., 85.4) or a string ("85,4").
-  // We need to standardize it to use a dot as the decimal separator for parseFloat.
-  // This replaces the Brazilian comma decimal separator with a dot.
-  // It does NOT remove dots that might be thousand separators.
-  sValue = sValue.replace(',', '.');
+  sValue = sValue.replace('.', '').replace(',', '.');
 
   const num = parseFloat(sValue);
   
-  // If it's not a valid number after parsing, return the original string value.
   if (isNaN(num)) {
     return value;
   }
 
-  // Format to Brazilian currency format string.
   return num.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -117,15 +138,12 @@ function formatCurrency(value: any): string | any {
 }
 
 function formatDate(value: any): string | any {
-    // Check if it's a valid date object
     if (value instanceof Date && !isNaN(value.getTime())) {
         const formattedDate = format(value, 'dd/MM/yyyy');
-        if (formattedDate === '30/11/1899') return null; // Excel's epoch can be weird
+        if (formattedDate === '30/11/1899') return null;
         return formattedDate;
     }
-    // Excel might return a number, try to convert it
     if (typeof value === 'number' && value > 0) {
-        // This is a simplified conversion from Excel's date serial number
         const excelEpoch = new Date(1899, 11, 30);
         const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
         if (!isNaN(date.getTime())) {
@@ -134,69 +152,66 @@ function formatDate(value: any): string | any {
              return formattedDate;
         }
     }
-    // If it's a string, just return it as is, or try to parse if needed.
-    // For now, we assume cellDates: true works.
     return value;
 }
 
 
 export async function processExcelFile(
-  excelDataUri: string
+  excelDataUri: string,
+  system: System
 ): Promise<{ success: true; data: string } | { success: false; error: string }> {
   try {
-    // 1. Decode Data URI
     const base64Data = excelDataUri.split(",")[1];
     if (!base64Data) {
       throw new Error("Invalid Excel file data.");
     }
     const buffer = Buffer.from(base64Data, "base64");
 
-    // 2. Read the workbook
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
       throw new Error("No worksheet found in the Excel file.");
     }
-    // Using {defval: ''} will ensure all empty cells are read as empty strings
-    // Using {raw: false} ensures we get the formatted text, not the raw value
+    
+    // Read all cells as strings to avoid type issues
     const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false });
 
-    // 3. Process headers and map columns
+    // Determine configuration based on the system
+    const INPUT_FIELDS = system === 'V8DIGITAL' ? V8DIGITAL_INPUT_FIELDS : UNNO_INPUT_FIELDS;
+    const OUTPUT_FIELDS = system === 'V8DIGITAL' ? V8DIGITAL_OUTPUT_FIELDS : UNNO_OUTPUT_FIELDS;
+
     const headers = jsonData[0] as string[];
     const headerMap: { [key: string]: number } = {};
     headers.forEach((header, index) => {
-      // Normalize header to find a match in INPUT_FIELDS
       const normalizedHeader = String(header).trim();
       if (INPUT_FIELDS.includes(normalizedHeader)) {
         headerMap[normalizedHeader] = index;
       }
     });
     
-    // Check if any required fields were found
     const foundFields = Object.keys(headerMap);
     if (foundFields.length === 0) {
         throw new Error("Could not find any of the required columns in the uploaded file. Please check the column headers.");
     }
 
-    // 4. Extract data and build the final structure
     const processedData: any[] = [];
-    const dataRows = jsonData.slice(1); // All rows except the header row
+    const dataRows = jsonData.slice(1);
     const today = format(new Date(), 'dd/MM/yyyy');
 
     for (const row of dataRows) {
         let rowHasData = false;
         const sourceRow: { [key: string]: any } = {};
 
-        // Extract data from input file based on mapped headers
         for (const inputField of INPUT_FIELDS) {
             if (headerMap.hasOwnProperty(inputField)) {
                 const colIndex = headerMap[inputField];
                 let cellValue = (row as any[])[colIndex];
                 if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
-                    if (inputField.startsWith('VAL_')) {
+                    // Specific formatting based on field name conventions
+                    if (inputField.toLowerCase().includes('valor') || inputField.startsWith('VAL_')) {
                         sourceRow[inputField] = formatCurrency(cellValue);
-                    } else if (inputField.startsWith('DAT_')) {
+                    } else if (inputField.toLowerCase().includes('data') || inputField.startsWith('DAT_')) {
                         sourceRow[inputField] = formatDate(cellValue);
                     } else {
                         sourceRow[inputField] = cellValue;
@@ -206,76 +221,79 @@ export async function processExcelFile(
             }
         }
 
-      // Only add the row if it contains at least one piece of data from the file
       if (rowHasData) {
-        const newRow: { [key: string]: any } = {};
-
-        // Build the new row based on the output template
-        newRow['NUM_BANCO'] = 17;
-        newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
-        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
-        newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
-        newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['DSC_SITUACAO_EMPRESTIMO'] || '';
-        newRow['DAT_EMPRESTIMO'] = sourceRow['DAT_EMPRESTIMO'] || '';
-        newRow['COD_EMPREGADOR'] = '';
-        newRow['DSC_CONVENIO'] = '';
-        newRow['COD_ORGAO'] = '';
-        newRow['NOM_ORGAO'] = '';
-        newRow['COD_PRODUTOR_VENDA'] = '';
-        newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'] || '';
-        newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'] || '';
-        newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'] || '';
-        
-        const datNasc = sourceRow['DAT_NASCIMENTO'];
-        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '25/01/1990' : datNasc;
-        
-        newRow['NUM_IDENTIDADE'] = '';
-        newRow['NOM_LOGRADOURO'] = '';
-        newRow['NUM_PREDIO'] = '';
-        newRow['DSC_CMPLMNT_ENDRC'] = '';
-        newRow['NOM_BAIRRO'] = '';
-        newRow['NOM_LOCALIDADE'] = '';
-        newRow['SIG_UNIDADE_FEDERACAO'] = '';
-        newRow['COD_ENDRCMNT_PSTL'] = '';
-        newRow['NUM_TELEFONE'] = '';
-        newRow['NUM_TELEFONE_CELULAR'] = '';
-        newRow['NOM_MAE'] = '';
-        newRow['NOM_PAI'] = '';
-        newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow['QTD_PARCELA'] || '';
-        newRow['VAL_PRESTACAO'] = sourceRow['VAL_PRESTACAO'] || '';
-        newRow['VAL_BRUTO'] = sourceRow['VAL_BRUTO'] || '';
-        newRow['VAL_SALDO_RECOMPRA'] = '';
-        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = sourceRow['VAL_LIQUIDO'] || '';
-        newRow['DAT_CREDITO'] = sourceRow['DAT_CREDITO'] || '';
-        newRow['DAT_CONFIRMACAO'] = '';
-        newRow['VAL_REPASSE'] = '';
-        newRow['PCL_COMISSAO'] = '';
-        newRow['VAL_COMISSAO'] = '';
-        newRow['COD_UNIDADE_EMPRESA'] = '';
-        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
-        newRow['DAT_ESTORNO'] = '';
-        newRow['DSC_OBSERVACAO'] = '';
-        newRow['NUM_CPF_AGENTE'] = '';
-        newRow['NUM_OBJETO_ECT'] = '';
-        newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
-        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = sourceRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] || '';
-        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
-        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
-        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
-        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
-        newRow['COD_TIPO_FUNCAO'] = '';
-        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
-        newRow['COD_LOJA_DIGITACAO'] = '';
-        newRow['VAL_SEGURO'] = '';
-        
-        processedData.push(newRow);
+        if (system === 'V8DIGITAL') {
+            const newRow: { [key: string]: any } = {};
+            newRow['NUM_BANCO'] = 17;
+            newRow['NOM_BANCO'] = 'V8DIGITAL';
+            newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
+            newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
+            newRow['COD_PRODUTO'] = '';
+            newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
+            newRow['DAT_CTR_INCLUSAO'] = today;
+            newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['DSC_SITUACAO_EMPRESTIMO'] || '';
+            newRow['DAT_EMPRESTIMO'] = sourceRow['DAT_EMPRESTIMO'] || '';
+            newRow['COD_EMPREGADOR'] = '';
+            newRow['DSC_CONVENIO'] = '';
+            newRow['COD_ORGAO'] = '';
+            newRow['NOM_ORGAO'] = '';
+            newRow['COD_PRODUTOR_VENDA'] = '';
+            newRow['NOM_PRODUTOR_VENDA'] = '';
+            newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'] || '';
+            newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'] || '';
+            newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'] || '';
+            const datNasc = sourceRow['DAT_NASCIMENTO'];
+            newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '25/01/1990' : datNasc;
+            newRow['NUM_IDENTIDADE'] = '';
+            newRow['NOM_LOGRADOURO'] = '';
+            newRow['NUM_PREDIO'] = '';
+            newRow['DSC_CMPLMNT_ENDRC'] = '';
+            newRow['NOM_BAIRRO'] = '';
+            newRow['NOM_LOCALIDADE'] = '';
+            newRow['SIG_UNIDADE_FEDERACAO'] = '';
+            newRow['COD_ENDRCMNT_PSTL'] = '';
+            newRow['NUM_TELEFONE'] = '';
+            newRow['NUM_TELEFONE_CELULAR'] = '';
+            newRow['NOM_MAE'] = '';
+            newRow['NOM_PAI'] = '';
+            newRow['NUM_BENEFICIO'] = '';
+            newRow['QTD_PARCELA'] = sourceRow['QTD_PARCELA'] || '';
+            newRow['VAL_PRESTACAO'] = sourceRow['VAL_PRESTACAO'] || '';
+            newRow['VAL_BRUTO'] = sourceRow['VAL_BRUTO'] || '';
+            newRow['VAL_SALDO_RECOMPRA'] = '';
+            newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+            newRow['VAL_LIQUIDO'] = sourceRow['VAL_LIQUIDO'] || '';
+            newRow['DAT_CREDITO'] = sourceRow['DAT_CREDITO'] || '';
+            newRow['DAT_CONFIRMACAO'] = '';
+            newRow['VAL_REPASSE'] = '';
+            newRow['PCL_COMISSAO'] = '';
+            newRow['VAL_COMISSAO'] = '';
+            newRow['COD_UNIDADE_EMPRESA'] = '';
+            newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+            newRow['DAT_ESTORNO'] = '';
+            newRow['DSC_OBSERVACAO'] = '';
+            newRow['NUM_CPF_AGENTE'] = '';
+            newRow['NUM_OBJETO_ECT'] = '';
+            newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
+            newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = sourceRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] || '';
+            newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+            newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+            newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+            newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+            newRow['COD_TIPO_FUNCAO'] = '';
+            newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+            newRow['COD_LOJA_DIGITACAO'] = '';
+            newRow['VAL_SEGURO'] = '';
+            processedData.push(newRow);
+        } else if (system === 'UNNO') {
+            // For now, UNNO just outputs what it reads. This will be updated later.
+            const newRow: { [key: string]: any } = {};
+             for (const field of UNNO_OUTPUT_FIELDS) {
+                 newRow[field] = sourceRow[field] || '';
+             }
+            processedData.push(newRow);
+        }
       }
     }
 
@@ -283,7 +301,6 @@ export async function processExcelFile(
         throw new Error("No data was extracted. Please check if the data rows are empty or if the column headers are correct.");
     }
 
-    // Create a new worksheet with only the output fields in order
     const finalData = processedData.map(row => {
         const orderedRow: any = {};
         for(const field of OUTPUT_FIELDS) {
@@ -291,7 +308,6 @@ export async function processExcelFile(
         }
         return orderedRow;
     });
-
 
     return { success: true, data: JSON.stringify(finalData) };
   } catch (error) {
