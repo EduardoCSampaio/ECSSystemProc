@@ -39,55 +39,55 @@ export default function Home() {
             <Button asChild size="lg">
               <Link href="/v8digital">V8DIGITAL</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/unno">UNNO</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/glm-crefisacp">GLM - CREFISACP</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/queromais">QUERO+</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/lev">LEV (Diversos Bancos)</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/facta">FACTA</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/presencabank">PRESENÇABANK</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/qualibanking">QUALIBANKING</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/pan">PAN</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/brb-inconta">BRB-INCONTA</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/neocredito">NEOCREDITO</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/prata-digital">PRATA DIGITAL</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/phtech">PHTECH</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/totalcash">TOTALCASH</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/amigoz">AMIGOZ</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/brb-esteira">BRB ESTEIRA</Link>
             </Button>
             <Button asChild size="lg">
               <Link href="/bmg">BMG</Link>
             </Button>
-            <Button asChild size="lg">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/inter">INTER</Link>
             </Button>
             <Button asChild size="lg">
