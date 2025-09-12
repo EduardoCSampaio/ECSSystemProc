@@ -107,12 +107,20 @@ export function EcsDataProcessor() {
   );
 
   const handleDownload = () => {
-    if (!processedData) return;
+    if (!processedData || processedData.length === 0) return;
     const ws = XLSX.utils.json_to_sheet(processedData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Extracted Data");
-    const baseName = originalFileName.replace(/\.(xlsx|xls|csv)$/, "");
-    XLSX.writeFile(wb, `${baseName}_processed.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Dados Processados");
+
+    const bankName = processedData[0]?.NOM_BANCO || 'BANCO';
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const dateStr = `${day}${month}${year}`;
+
+    const fileName = `WORKBANK${bankName.toUpperCase()}${dateStr}.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   const handleReset = () => {
