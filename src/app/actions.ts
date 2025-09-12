@@ -109,11 +109,11 @@ const UNNO_INPUT_FIELDS = [
   "Data Nascimento",
 ];
 
-// Placeholder for UNNO output fields. The user will provide the final structure later.
 const UNNO_OUTPUT_FIELDS = [
     "NUM_BANCO",
     "NOM_BANCO",
-    ...UNNO_INPUT_FIELDS
+    ...UNNO_INPUT_FIELDS,
+    "PCL_TAXA_EMPRESTIMO"
 ];
 
 
@@ -125,23 +125,14 @@ type System = "V8DIGITAL" | "UNNO";
 
 function formatCurrency(value: any): string | any {
     if (value === null || value === undefined || value === '') return '';
-
     let sValue = String(value).trim();
-    
-    // If it's already a valid number string with a comma decimal, just format it.
-    if (/^\d{1,3}(\.\d{3})*,\d{2}$/.test(sValue)) {
-        return sValue;
+    if (sValue.includes(',')) {
+        sValue = sValue.replace(/\./g, '').replace(',', '.');
     }
-
-    // Replace Brazilian thousand separator, then replace comma with dot for parsing
-    sValue = sValue.replace(/\./g, '').replace(',', '.');
-
     const num = parseFloat(sValue);
-    
     if (isNaN(num)) {
-        return value; // Return original value if it's not a number
+        return value; 
     }
-
     return num.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
@@ -150,29 +141,30 @@ function formatCurrency(value: any): string | any {
 
 function formatDate(value: any): string | any {
     if (!value) return null;
-
-    // Handle cases where date includes time e.g., "DD/MM/YYYY HH:mm:ss"
     if (typeof value === 'string') {
         const parts = value.split(' ');
-        if (parts.length > 0 && /^\d{2}\/\d{2}\/\d{4}$/.test(parts[0])) {
-            return parts[0];
+        const datePart = parts[0];
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(datePart)) {
+            return datePart;
         }
     }
-    
-    if (value instanceof Date && !isNaN(value.getTime())) {
-        const formattedDate = format(value, 'dd/MM/yyyy');
-        if (formattedDate === '30/11/1899') return null;
-        return formattedDate;
+    try {
+      const date = new Date(value);
+       if (value instanceof Date && !isNaN(date.getTime())) {
+          return format(date, 'dd/MM/yyyy');
+      }
+      if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+          const excelEpoch = new Date(1899, 11, 30);
+          const parsedValue = typeof value === 'string' ? parseFloat(value) : value;
+          const resultDate = new Date(excelEpoch.getTime() + parsedValue * 24 * 60 * 60 * 1000);
+          if (!isNaN(resultDate.getTime())) {
+              return format(resultDate, 'dd/MM/yyyy');
+          }
+      }
+    } catch(e) {
+      // ignore parsing errors and return original value
     }
-    if (typeof value === 'number' && value > 0) {
-        const excelEpoch = new Date(1899, 11, 30);
-        const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
-        if (!isNaN(date.getTime())) {
-             const formattedDate = format(date, 'dd/MM/yyyy');
-             if (formattedDate === '30/11/1899') return null;
-             return formattedDate;
-        }
-    }
+
     return value;
 }
 
@@ -188,7 +180,7 @@ export async function processExcelFile(
     }
     const buffer = Buffer.from(base64Data, "base64");
 
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, raw: false });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellText: true, cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
@@ -317,6 +309,7 @@ export async function processExcelFile(
             for (const field of UNNO_INPUT_FIELDS) {
                  newRow[field] = sourceRow[field] || '';
             }
+            newRow['PCL_TAXA_EMPRESTIMO'] = '1,79';
             processedData.push(newRow);
         }
       }
