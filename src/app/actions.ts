@@ -191,8 +191,10 @@ function formatDate(value: any): string {
                  date = new Date(Number(p3), Number(p2) - 1, Number(p1));
             }
              // MM/DD/YYYY or MM-DD-YYYY (heuristic)
-            else if (Number(p1) <= 12) {
-                 date = new Date(Number(p3), Number(p1) - 1, Number(p2));
+            else if (Number(p2) <= 12) { // Check if middle part is a valid month
+                 date = new Date(Number(p3), Number(p1) - 1, Number(p2)); // Handles MM/DD/YYYY
+            } else {
+                 date = new Date(Number(p3), Number(p2) - 1, Number(p1)); // Fallback to DD/MM/YYYY
             }
         } else {
              // Fallback for other formats Date can parse
@@ -375,7 +377,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer", cellText: false, cellDates: true });
+    const workbook = XLSX.read(buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
@@ -383,7 +385,7 @@ export async function processExcelFile(
     }
     
     // Convert sheet to JSON, reading all values as is.
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: null });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true, defval: '' });
 
     // Filter out rows that are completely empty
     const filteredData = jsonData.filter(row => 
@@ -424,3 +426,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
