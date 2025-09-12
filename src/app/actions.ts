@@ -1,12 +1,11 @@
+
 "use server";
 
 import * as XLSX from "xlsx";
 import { format } from "date-fns";
 
-// The fields we want to extract from the Excel file, in order.
-const REQUIRED_FIELDS = [
-  "NUM_BAN",
-  "NOM_BANCO",
+// The fields we need from the uploaded Excel file.
+const INPUT_FIELDS = [
   "NUM_PROPOSTA",
   "NUM_CONTRATO",
   "DSC_TIPO_PROPOSTA_EMPRESTIMO",
@@ -14,42 +13,83 @@ const REQUIRED_FIELDS = [
   "DAT_CTR_INCLUSAO",
   "DSC_SITUACAO_EMPRESTIMO",
   "DAT_EMPRESTIMO",
-  "COD_EMPREGADOR",
-  "COD_ORGAO",
-  "COD_PRODUTOR_VENDA",
-  "NOM_PRODUTOR_VENDA",
   "NIC_CTR_USUARIO",
   "COD_CPF_CLIENTE",
   "NOM_CLIENTE",
   "DAT_NASCIMENTO",
-  "NUM_IDENTIDADE",
-  "NOM_LOGRADOURO",
-  "NUM_PREDIO",
-  "DSC_CMPLMNT_ENDRC",
-  "NOM_BAIRRO",
-  "NOM_LOCALIDADE",
-  "SIG_UNIDADE_FEDERACAO",
-  "COD_ENDRCMNT_PSTL",
-  "NUM_TELEFONE",
-  "NUM_TELEFONE_CELULAR",
-  "NOM_MAE",
-  "NOM_PAI",
-  "NUM_BENEFICIO",
   "QTD_PARCELA",
   "VAL_PRESTACAO",
   "VAL_BRUTO",
   "VAL_LIQUIDO",
-  "PCR_PMT_PAGO_REF",
   "DAT_CREDITO",
-  "COD_UNIDADE_EMPRESA",
-  "COD_SITUACAO_EMPRESTIMO",
-  "DAT_ESTORNO",
-  "DSC_OBSERVACAO",
-  "NUM_CPF_AGENTE",
-  "NUM_OBJETO_ECT",
-  "PCL_TAXA_EMPRESTIMO",
   "DSC_TIPO_FORMULARIO_EMPRESTIMO",
 ];
+
+// The full list of fields for the output file, in the correct order.
+const OUTPUT_FIELDS = [
+    "NUM_BANCO",
+    "NOM_BANCO",
+    "NUM_PROPOSTA",
+    "NUM_CONTRATO",
+    "DSC_TIPO_PROPOSTA_EMPRESTIMO",
+    "COD_PRODUTO",
+    "DSC_PRODUTO",
+    "DAT_CTR_INCLUSAO",
+    "DSC_SITUACAO_EMPRESTIMO",
+    "DAT_EMPRESTIMO",
+    "COD_EMPREGADOR",
+    "DSC_CONVENIO",
+    "COD_ORGAO",
+    "NOM_ORGAO",
+    "COD_PRODUTOR_VENDA",
+    "NOM_PRODUTOR_VENDA",
+    "NIC_CTR_USUARIO",
+    "COD_CPF_CLIENTE",
+    "NOM_CLIENTE",
+    "DAT_NASCIMENTO",
+    "NUM_IDENTIDADE",
+    "NOM_LOGRADOURO",
+    "NUM_PREDIO",
+    "DSC_CMPLMNT_ENDRC",
+    "NOM_BAIRRO",
+    "NOM_LOCALIDADE",
+    "SIG_UNIDADE_FEDERACAO",
+    "COD_ENDRCMNT_PSTL",
+    "NUM_TELEFONE",
+    "NUM_TELEFONE_CELULAR",
+    "NOM_MAE",
+    "NOM_PAI",
+    "NUM_BENEFICIO",
+    "QTD_PARCELA",
+    "VAL_PRESTACAO",
+    "VAL_BRUTO",
+    "VAL_SALDO_RECOMPRA",
+    "VAL_SALDO_REFINANCIAMENTO",
+    "VAL_LIQUIDO",
+    "PCR_PMT_PAGO_REF", // This field was in the original list, but not in the final template. Keeping it here for now.
+    "DAT_CREDITO",
+    "DAT_CONFIRMACAO",
+    "VAL_REPASSE",
+    "PCL_COMISSAO",
+    "VAL_COMISSAO",
+    "COD_UNIDADE_EMPRESA",
+    "COD_SITUACAO_EMPRESTIMO",
+    "DAT_ESTORNO",
+    "DSC_OBSERVACAO",
+    "NUM_CPF_AGENTE",
+    "NUM_OBJETO_ECT",
+    "PCL_TAXA_EMPRESTIMO",
+    "DSC_TIPO_FORMULARIO_EMPRESTIMO",
+    "DSC_TIPO_CREDITO_EMPRESTIMO",
+    "NOM_GRUPO_UNIDADE_EMPRESA",
+    "COD_PROPOSTA_EMPRESTIMO",
+    "COD_GRUPO_UNIDADE_EMPRESA",
+    "COD_TIPO_FUNCAO",
+    "COD_TIPO_PROPOSTA_EMPRESTIMO",
+    "COD_LOJA_DIGITACAO",
+    "VAL_SEGURO"
+];
+
 
 function formatCurrency(value: any): string | any {
   // Try to convert to a number.
@@ -115,9 +155,9 @@ export async function processExcelFile(
     const headers = jsonData[0] as string[];
     const headerMap: { [key: string]: number } = {};
     headers.forEach((header, index) => {
-      // Normalize header to find a match in REQUIRED_FIELDS
+      // Normalize header to find a match in INPUT_FIELDS
       const normalizedHeader = String(header).trim();
-      if (REQUIRED_FIELDS.includes(normalizedHeader)) {
+      if (INPUT_FIELDS.includes(normalizedHeader)) {
         headerMap[normalizedHeader] = index;
       }
     });
@@ -128,68 +168,126 @@ export async function processExcelFile(
         throw new Error("Could not find any of the required columns in the uploaded file. Please check the column headers.");
     }
 
-    // 4. Extract data based on the mapped headers
-    const extractedData: any[] = [];
+    // 4. Extract data and build the final structure
+    const processedData: any[] = [];
     const dataRows = jsonData.slice(1); // All rows except the header row
+    const today = format(new Date(), 'dd/MM/yyyy');
 
     for (const row of dataRows) {
-      const newRow: { [key: string]: any } = {};
-      let rowHasData = false;
+        let rowHasData = false;
+        const sourceRow: { [key: string]: any } = {};
 
-      // Add hardcoded values first
-      newRow['NUM_BAN'] = 17;
-      newRow['NOM_BANCO'] = 'V8DIGITAL';
-      newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
-
-      for (const requiredField of REQUIRED_FIELDS) {
-        // Skip hardcoded fields
-        if (requiredField === 'NUM_BAN' || requiredField === 'NOM_BANCO' || requiredField === 'PCL_TAXA_EMPRESTIMO') {
-            continue;
+        // Extract data from input file based on mapped headers
+        for (const inputField of INPUT_FIELDS) {
+            if (headerMap.hasOwnProperty(inputField)) {
+                const colIndex = headerMap[inputField];
+                let cellValue = (row as any[])[colIndex];
+                if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
+                    if (inputField.startsWith('VAL_')) {
+                        sourceRow[inputField] = formatCurrency(cellValue);
+                    } else if (inputField.startsWith('DAT_')) {
+                        sourceRow[inputField] = formatDate(cellValue);
+                    } else {
+                        sourceRow[inputField] = cellValue;
+                    }
+                    rowHasData = true;
+                }
+            }
         }
 
-        if (headerMap.hasOwnProperty(requiredField)) {
-          const colIndex = headerMap[requiredField];
-          let cellValue = (row as any[])[colIndex];
-           // Only add the field if it has a value
-          if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
-            if (requiredField.startsWith('VAL_')) {
-              newRow[requiredField] = formatCurrency(cellValue);
-            } else if (requiredField.startsWith('DAT_')) {
-              newRow[requiredField] = formatDate(cellValue);
-            }
-            else {
-              newRow[requiredField] = cellValue;
-            }
-            rowHasData = true;
-          }
-        }
-      }
-       // Only add the row if it contains at least one piece of data from the file
+      // Only add the row if it contains at least one piece of data from the file
       if (rowHasData) {
-        // Handle DAT_NASCIMENTO default value
-        const datNasc = newRow['DAT_NASCIMENTO'];
-        if (!datNasc || datNasc === '00/00/0000') {
-          newRow['DAT_NASCIMENTO'] = '25/01/1990';
-        }
+        const newRow: { [key: string]: any } = {};
 
-        // Handle DSC_TIPO_PROPOSTA_EMPRESTIMO transformation
-        const dscTipo = newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
-        if (dscTipo === 'Margem Livre (Novo)') {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
-        }
+        // Build the new row based on the output template
+        newRow['NUM_BANCO'] = 17;
+        newRow['NOM_BANCO'] = 'V8DIGITAL';
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'] || '';
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'] || '';
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['DSC_SITUACAO_EMPRESTIMO'] || '';
+        newRow['DAT_EMPRESTIMO'] = sourceRow['DAT_EMPRESTIMO'] || '';
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'] || '';
+        newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'] || '';
+        newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'] || '';
         
-        extractedData.push(newRow);
+        const datNasc = sourceRow['DAT_NASCIMENTO'];
+        newRow['DAT_NASCIMENTO'] = (!datNasc || datNasc === '00/00/0000') ? '25/01/1990' : datNasc;
+        
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['QTD_PARCELA'] || '';
+        newRow['VAL_PRESTACAO'] = sourceRow['VAL_PRESTACAO'] || '';
+        newRow['VAL_BRUTO'] = sourceRow['VAL_BRUTO'] || '';
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = sourceRow['VAL_LIQUIDO'] || '';
+        newRow['PCR_PMT_PAGO_REF'] = sourceRow['PCR_PMT_PAGO_REF'] || '';
+        newRow['DAT_CREDITO'] = sourceRow['DAT_CREDITO'] || '';
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = sourceRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] || '';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+        
+        processedData.push(newRow);
       }
     }
 
-    if (extractedData.length === 0) {
+    if (processedData.length === 0) {
         throw new Error("No data was extracted. Please check if the data rows are empty or if the column headers are correct.");
     }
 
-    return { success: true, data: JSON.stringify(extractedData) };
+    // Create a new worksheet with only the output fields in order
+    const finalData = processedData.map(row => {
+        const orderedRow: any = {};
+        for(const field of OUTPUT_FIELDS) {
+            orderedRow[field] = row.hasOwnProperty(field) ? row[field] : '';
+        }
+        return orderedRow;
+    });
+
+
+    return { success: true, data: JSON.stringify(finalData) };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during processing.";
     console.error(errorMessage);
     return { success: false, error: errorMessage };
   }
 }
+
