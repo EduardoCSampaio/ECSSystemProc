@@ -92,15 +92,25 @@ const OUTPUT_FIELDS = [
 
 
 function formatCurrency(value: any): string | any {
-  // Try to convert to a number.
-  let num = Number(String(value).replace(',', '.'));
+  let num;
+  const sValue = String(value).trim();
 
-  // If it's not a valid number, return the original value.
+  // Check if it's already a valid number.
+  if (typeof value === 'number') {
+    num = value;
+  } else {
+    // It's a string, let's process it.
+    // Replace thousand separators for pt-BR (dot) and set decimal to dot.
+    const cleanValue = sValue.replace(/\./g, '').replace(',', '.');
+    num = parseFloat(cleanValue);
+  }
+
+  // If it's not a valid number after parsing, return the original value.
   if (isNaN(num)) {
     return value;
   }
 
-  // Format to Brazilian currency format.
+  // Format to Brazilian currency format string.
   return num.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -290,4 +300,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
