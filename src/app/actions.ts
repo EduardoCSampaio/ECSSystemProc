@@ -109,12 +109,7 @@ const UNNO_INPUT_FIELDS = [
   "Data Nascimento",
 ];
 
-const UNNO_OUTPUT_FIELDS = [
-    "NUM_BANCO",
-    "NOM_BANCO",
-    ...UNNO_INPUT_FIELDS,
-    "PCL_TAXA_EMPRESTIMO"
-];
+const UNNO_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 
 // =================================================================
@@ -126,33 +121,48 @@ type System = "V8DIGITAL" | "UNNO";
 function formatCurrency(value: any): string | any {
     if (value === null || value === undefined || value === '') return '';
     let sValue = String(value).trim();
+
+    // If it already contains a comma, it's likely in pt-BR format.
+    // Replace thousand separators (.) and then comma with a dot for parsing.
     if (sValue.includes(',')) {
         sValue = sValue.replace(/\./g, '').replace(',', '.');
     }
+    
     const num = parseFloat(sValue);
+    
     if (isNaN(num)) {
-        return value; 
+        return value; // Return original value if it's not a parsable number
     }
+    
+    // Format back to pt-BR standard.
     return num.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
 }
 
+
 function formatDate(value: any): string | any {
     if (!value) return null;
+    
+    // If it's a string, try to extract just the date part.
     if (typeof value === 'string') {
         const parts = value.split(' ');
         const datePart = parts[0];
+        // Check if the first part is already in DD/MM/YYYY format
         if (/^\d{2}\/\d{2}\/\d{4}$/.test(datePart)) {
             return datePart;
         }
     }
+
     try {
+      // Handle JS Date objects
       const date = new Date(value);
        if (value instanceof Date && !isNaN(date.getTime())) {
           return format(date, 'dd/MM/yyyy');
       }
+
+      // Handle Excel's numeric date format
       if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
           const excelEpoch = new Date(1899, 11, 30);
           const parsedValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -180,14 +190,14 @@ export async function processExcelFile(
     }
     const buffer = Buffer.from(base64Data, "base64");
 
-    const workbook = XLSX.read(buffer, { type: "buffer", cellText: true, cellDates: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellText: false, cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
       throw new Error("No worksheet found in the Excel file.");
     }
     
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', raw: false, dateNF: 'dd/MM/yyyy' });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '', rawNumbers: false });
 
     // Determine configuration based on the system
     const INPUT_FIELDS = system === 'V8DIGITAL' ? V8DIGITAL_INPUT_FIELDS : UNNO_INPUT_FIELDS;
@@ -306,10 +316,64 @@ export async function processExcelFile(
             const newRow: { [key: string]: any } = {};
             newRow['NUM_BANCO'] = 9209;
             newRow['NOM_BANCO'] = 'UNNO';
-            for (const field of UNNO_INPUT_FIELDS) {
-                 newRow[field] = sourceRow[field] || '';
-            }
+            newRow['NUM_PROPOSTA'] = sourceRow['CCB'] || '';
+            newRow['NUM_CONTRATO'] = sourceRow['CCB'] || '';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
+            newRow['COD_PRODUTO'] = '';
+            newRow['DSC_PRODUTO'] = sourceRow['Tabela'] || '';
+            newRow['DAT_CTR_INCLUSAO'] = today;
+            newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['Status'] || '';
+            newRow['DAT_EMPRESTIMO'] = sourceRow['Data de Digitação'] || '';
+            newRow['COD_EMPREGADOR'] = '';
+            newRow['DSC_CONVENIO'] = '';
+            newRow['COD_ORGAO'] = '';
+            newRow['NOM_ORGAO'] = '';
+            newRow['COD_PRODUTOR_VENDA'] = '';
+            newRow['NOM_PRODUTOR_VENDA'] = '';
+            newRow['NIC_CTR_USUARIO'] = sourceRow['E-mail'] || '';
+            newRow['COD_CPF_CLIENTE'] = sourceRow['CPF/CNPJ'] || '';
+            newRow['NOM_CLIENTE'] = sourceRow['Nome'] || '';
+            newRow['DAT_NASCIMENTO'] = sourceRow['Data Nascimento'] || '';
+            newRow['NUM_IDENTIDADE'] = '';
+            newRow['NOM_LOGRADOURO'] = '';
+            newRow['NUM_PREDIO'] = '';
+            newRow['DSC_CMPLMNT_ENDRC'] = '';
+            newRow['NOM_BAIRRO'] = '';
+            newRow['NOM_LOCALIDADE'] = '';
+            newRow['SIG_UNIDADE_FEDERACAO'] = '';
+            newRow['COD_ENDRCMNT_PSTL'] = '';
+            newRow['NUM_TELEFONE'] = '';
+            newRow['NUM_TELEFONE_CELULAR'] = '';
+            newRow['NOM_MAE'] = '';
+            newRow['NOM_PAI'] = '';
+            newRow['NUM_BENEFICIO'] = '';
+            newRow['QTD_PARCELA'] = sourceRow['Parcelas'] || '';
+            newRow['VAL_PRESTACAO'] = '';
+            newRow['VAL_BRUTO'] = sourceRow['Valor Bruto'] || '';
+            newRow['VAL_SALDO_RECOMPRA'] = '';
+            newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+            newRow['VAL_LIQUIDO'] = sourceRow['Valor Líquido'] || '';
+            newRow['DAT_CREDITO'] = sourceRow['Data do Desembolso'] || '';
+            newRow['DAT_CONFIRMACAO'] = '';
+            newRow['VAL_REPASSE'] = '';
+            newRow['PCL_COMISSAO'] = '';
+            newRow['VAL_COMISSAO'] = '';
+            newRow['COD_UNIDADE_EMPRESA'] = '';
+            newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+            newRow['DAT_ESTORNO'] = '';
+            newRow['DSC_OBSERVACAO'] = '';
+            newRow['NUM_CPF_AGENTE'] = '';
+            newRow['NUM_OBJETO_ECT'] = '';
             newRow['PCL_TAXA_EMPRESTIMO'] = '1,79';
+            newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+            newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+            newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+            newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+            newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+            newRow['COD_TIPO_FUNCAO'] = '';
+            newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+            newRow['COD_LOJA_DIGITACAO'] = '';
+            newRow['VAL_SEGURO'] = '';
             processedData.push(newRow);
         }
       }
