@@ -230,7 +230,9 @@ function formatDate(value: any): string {
 function processV8Digital(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
     
-    return data.map(sourceRow => {
+    return data
+      .filter(sourceRow => sourceRow['NUM_PROPOSTA'] && String(sourceRow['NUM_PROPOSTA']).trim() !== '')
+      .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         
         // Map and transform data based on V8Digital rules
@@ -308,7 +310,9 @@ function processV8Digital(data: any[]): any[] {
 function processUnno(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
-    return data.map(sourceRow => {
+    return data
+      .filter(sourceRow => sourceRow['CCB'] && String(sourceRow['CCB']).trim() !== '')
+      .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
         // Map and transform data based on UNNO rules
