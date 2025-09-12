@@ -122,10 +122,22 @@ function formatCurrency(value: any): string | any {
     if (value === null || value === undefined || value === '') return '';
     let sValue = String(value).trim();
 
-    // If it contains a comma, assume it's pt-BR format already.
-    // Replace thousand separators (.) and then comma with a dot for parsing.
-    if (sValue.includes(',')) {
-        sValue = sValue.replace(/\./g, '').replace(',', '.');
+    // Handles formats like "1.234,56" (pt-BR) or "1,234.56" (en-US)
+    // by removing thousand separators and standardizing decimal separator to dot.
+    const hasComma = sValue.includes(',');
+    const hasDot = sValue.includes('.');
+
+    if (hasComma && hasDot) {
+        // Assumes dot is thousand separator if it comes before comma
+        if (sValue.indexOf('.') < sValue.indexOf(',')) {
+            sValue = sValue.replace(/\./g, '').replace(',', '.');
+        } else {
+             // Assumes comma is thousand separator
+            sValue = sValue.replace(/,/g, '');
+        }
+    } else if (hasComma) {
+        // Only has comma, assume it's the decimal separator
+        sValue = sValue.replace(',', '.');
     }
     
     const num = parseFloat(sValue);
@@ -152,9 +164,10 @@ function formatDate(value: any): string | any {
       }
 
       // Handle Excel's numeric date format
-      if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+      if (typeof value === 'number' || (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value) && !isNaN(Number(value)))) {
           const excelEpoch = new Date(1899, 11, 30);
           const parsedValue = typeof value === 'string' ? parseFloat(value) : value;
+          // Excel's epoch starts on day 1, not 0. But JS date math handles it.
           const resultDate = new Date(excelEpoch.getTime() + parsedValue * 24 * 60 * 60 * 1000);
           if (!isNaN(resultDate.getTime())) {
               // Adjust for timezone offset to prevent day-before errors
@@ -163,18 +176,19 @@ function formatDate(value: any): string | any {
               return format(adjustedDate, 'dd/MM/yyyy');
           }
       }
-
+      
       // Handle string dates (e.g., "MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD")
       if (typeof value === 'string') {
           const datePart = value.split(' ')[0]; // Remove time part if it exists
           let date;
-          // Try parsing MM/DD/YYYY - common in US formats or automatic conversions
-          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(datePart)) {
-              const parts = datePart.split('/');
+          
+          // Regex to match MM/DD/YYYY or M/D/YYYY
+          const matchMDY = datePart.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+          if (matchMDY) {
               // new Date(year, month-1, day)
-              date = new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
+              date = new Date(Number(matchMDY[3]), Number(matchMDY[1]) - 1, Number(matchMDY[2]));
           } else {
-              // Fallback for other formats like YYYY-MM-DD or native JS string parsing
+              // Fallback for other formats like YYYY-MM-DD, DD/MM/YYYY or native JS string parsing
               date = new Date(datePart);
           }
 
@@ -413,3 +427,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
