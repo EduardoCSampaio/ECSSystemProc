@@ -117,12 +117,17 @@ const UNNO_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 const GLM_CREFISACP_INPUT_FIELDS = []; // TODO: Define input fields
 const GLM_CREFISACP_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
+// =================================================================
+// Generic Configurations
+// =================================================================
+const GENERIC_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
 
 // =================================================================
 // Generic Helper Functions
 // =================================================================
 
-type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP";
+type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP" | "QUEROMAIS" | "LEV" | "FACTA" | "PRESENCABANK" | "QUALIBANKING" | "PAN" | "BRB-INCONTA" | "NEOCREDITO" | "PRATA DIGITAL" | "PHTECH" | "TOTALCASH" | "AMIGOZ" | "BRB ESTEIRA" | "BMG" | "INTER" | "DIGIO";
 
 /**
  * Formats a value into a Brazilian currency string (BRL).
@@ -368,7 +373,7 @@ function processUnno(data: any[]): any[] {
         newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
         newRow['COD_GRUPO_UNidade_EMPRESA'] = '';
         newRow['COD_TIPO_FUNCAO'] = '';
-        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTimo'] = '';
         newRow['COD_LOJA_DIGITACAO'] = '';
         newRow['VAL_SEGURO'] = '';
         return newRow;
@@ -376,15 +381,14 @@ function processUnno(data: any[]): any[] {
 }
 
 // =================================================================
-// GLM-CREFISACP Processing Logic
+// Placeholder Processing Logic for new systems
 // =================================================================
-function processGlmCrefisacp(data: any[]): any[] {
-    // TODO: Implement processing logic for GLM-CREFISACP
+function processGeneric(data: any[], system: string): any[] {
     return data.map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         // Placeholder logic - just returns an empty object for each field
-        GLM_CREFISACP_OUTPUT_FIELDS.forEach(field => newRow[field] = '');
-        newRow['NOM_BANCO'] = 'GLM-CREFISACP';
+        GENERIC_OUTPUT_FIELDS.forEach(field => newRow[field] = '');
+        newRow['NOM_BANCO'] = system;
         return newRow;
     });
 }
@@ -425,17 +429,37 @@ export async function processExcelFile(
     let processedData: any[];
     let outputFields: string[];
 
-    if (system === 'V8DIGITAL') {
-        processedData = processV8Digital(filteredData);
-        outputFields = V8DIGITAL_OUTPUT_FIELDS;
-    } else if (system === 'UNNO') {
-        processedData = processUnno(filteredData);
-        outputFields = UNNO_OUTPUT_FIELDS;
-    } else if (system === 'GLM-CREFISACP') {
-        processedData = processGlmCrefisacp(filteredData);
-        outputFields = GLM_CREFISACP_OUTPUT_FIELDS;
-    } else {
-        throw new Error(`Unknown system: ${system}`);
+    switch (system) {
+        case 'V8DIGITAL':
+            processedData = processV8Digital(filteredData);
+            outputFields = V8DIGITAL_OUTPUT_FIELDS;
+            break;
+        case 'UNNO':
+            processedData = processUnno(filteredData);
+            outputFields = UNNO_OUTPUT_FIELDS;
+            break;
+        case 'GLM-CREFISACP':
+        case 'QUEROMAIS':
+        case 'LEV':
+        case 'FACTA':
+        case 'PRESENCABANK':
+        case 'QUALIBANKING':
+        case 'PAN':
+        case 'BRB-INCONTA':
+        case 'NEOCREDITO':
+        case 'PRATA DIGITAL':
+        case 'PHTECH':
+        case 'TOTALCASH':
+        case 'AMIGOZ':
+        case 'BRB ESTEIRA':
+        case 'BMG':
+        case 'INTER':
+        case 'DIGIO':
+            processedData = processGeneric(filteredData, system);
+            outputFields = GENERIC_OUTPUT_FIELDS;
+            break;
+        default:
+            throw new Error(`Unknown system: ${system}`);
     }
 
     if (processedData.length === 0) {
@@ -458,3 +482,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    

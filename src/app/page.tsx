@@ -25,7 +25,7 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg shadow-xl bg-card/80 backdrop-blur-sm border-border/50">
+        <Card className="w-full max-w-4xl shadow-xl bg-card/80 backdrop-blur-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-center text-3xl font-headline">
               Escolha um sistema
@@ -35,23 +35,63 @@ export default function Home() {
               propostas.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap justify-center items-center gap-4 p-6">
-            <Button asChild size="lg" className="w-full sm:w-auto">
+          <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-6">
+            <Button asChild size="lg">
               <Link href="/v8digital">V8DIGITAL</Link>
             </Button>
-            <Button
-              asChild
-              size="lg"
-              className="w-full sm:w-auto"
-            >
+            <Button asChild size="lg">
               <Link href="/unno">UNNO</Link>
             </Button>
-            <Button
-              asChild
-              size="lg"
-              className="w-full sm:w-auto"
-            >
+            <Button asChild size="lg">
               <Link href="/glm-crefisacp">GLM - CREFISACP</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/queromais">QUERO+</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/lev">LEV (Diversos Bancos)</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/facta">FACTA</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/presencabank">PRESENÇABANK</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/qualibanking">QUALIBANKING</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/pan">PAN</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/brb-inconta">BRB-INCONTA</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/neocredito">NEOCREDITO</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/prata-digital">PRATA DIGITAL</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/phtech">PHTECH</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/totalcash">TOTALCASH</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/amigoz">AMIGOZ</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/brb-esteira">BRB ESTEIRA</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/bmg">BMG</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/inter">INTER</Link>
+            </Button>
+            <Button asChild size="lg">
+              <Link href="/digio">DIGIO</Link>
             </Button>
           </CardContent>
         </Card>

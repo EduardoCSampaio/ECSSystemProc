@@ -28,7 +28,7 @@ type ProcessStep =
   | "success"
   | "error";
 
-type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP";
+type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP" | "QUEROMAIS" | "LEV" | "FACTA" | "PRESENCABANK" | "QUALIBANKING" | "PAN" | "BRB-INCONTA" | "NEOCREDITO" | "PRATA DIGITAL" | "PHTECH" | "TOTALCASH" | "AMIGOZ" | "BRB ESTEIRA" | "BMG" | "INTER" | "DIGIO";
 
 interface EcsDataProcessorProps {
     system: System;
@@ -136,7 +136,7 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
     const year = today.getFullYear();
     const dateStr = `${day}${month}${year}`;
 
-    const fileName = `WORKBANK${bankName.toUpperCase()}${dateStr}.xlsx`;
+    const fileName = `WORKBANK${bankName.toUpperCase().replace(/[^A-Z0-9]/g, '')}${dateStr}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
 
@@ -236,3 +236,5 @@ export function EcsDataProcessor({ system }: EcsDataProcessorProps) {
     </Card>
   );
 }
+
+    
