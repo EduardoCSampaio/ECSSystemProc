@@ -43,7 +43,10 @@ export async function extractDataWithContext(input: DataExtractionInput): Promis
 const dataExtractionPrompt = ai.definePrompt({
   name: 'dataExtractionPrompt',
   input: {schema: DataExtractionInputSchema},
-  output: {schema: DataExtractionOutputSchema},
+  output: {
+    schema: DataExtractionOutputSchema,
+    format: 'json',
+  },
   prompt: `You are an expert data extraction specialist.
 
 You will be provided with an Excel file in the form of a base64 encoded data URI, and instructions on what data to extract.

@@ -44,7 +44,10 @@ export async function intelligentFieldMapping(
 const prompt = ai.definePrompt({
   name: 'intelligentFieldMappingPrompt',
   input: { schema: IntelligentFieldMappingInputSchema },
-  output: { schema: IntelligentFieldMappingOutputSchema },
+  output: {
+    schema: IntelligentFieldMappingOutputSchema,
+    format: 'json',
+  },
   prompt: `You are an expert data analyst specializing in mapping fields from uploaded Excel files to required data fields.
 
 You will analyze the provided Excel data and intelligently map the fields found in the Excel data to the following required fields:
@@ -70,4 +73,3 @@ const intelligentFieldMappingFlow = ai.defineFlow(
     return output!;
   }
 );
-
