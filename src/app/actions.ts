@@ -1,6 +1,7 @@
 "use server";
 
 import * as XLSX from "xlsx";
+import { format } from "date-fns";
 
 // The fields we want to extract from the Excel file, in order.
 const REQUIRED_FIELDS = [
@@ -66,6 +67,26 @@ function formatCurrency(value: any): string | any {
   });
 }
 
+function formatDate(value: any): string | any {
+    // Check if it's a valid date object
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        return format(value, 'dd/MM/yyyy');
+    }
+    // Excel might return a number, try to convert it
+    if (typeof value === 'number' && value > 0) {
+        // This is a simplified conversion from Excel's date serial number
+        const excelEpoch = new Date(1899, 11, 30);
+        const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+        if (!isNaN(date.getTime())) {
+             return format(date, 'dd/MM/yyyy');
+        }
+    }
+    // If it's a string, just return it as is, or try to parse if needed.
+    // For now, we assume cellDates: true works.
+    return value;
+}
+
+
 export async function processExcelFile(
   excelDataUri: string
 ): Promise<{ success: true; data: string } | { success: false; error: string }> {
@@ -78,7 +99,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // 2. Read the workbook
-    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
@@ -128,7 +149,10 @@ export async function processExcelFile(
           if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
             if (requiredField.startsWith('VAL_')) {
               newRow[requiredField] = formatCurrency(cellValue);
-            } else {
+            } else if (requiredField.startsWith('DAT_')) {
+              newRow[requiredField] = formatDate(cellValue);
+            }
+            else {
               newRow[requiredField] = cellValue;
             }
             rowHasData = true;
