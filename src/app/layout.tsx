@@ -3,8 +3,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "ECS Data Processor",
-  description: "Upload, process, and download Excel data with AI.",
+  title: "Seleção de Sistema",
+  description: "Selecione um sistema para iniciar.",
 };
 
 export default function RootLayout({
