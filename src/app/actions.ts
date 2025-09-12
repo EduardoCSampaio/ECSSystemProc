@@ -122,7 +122,7 @@ function formatCurrency(value: any): string | any {
     if (value === null || value === undefined || value === '') return '';
     let sValue = String(value).trim();
 
-    // If it already contains a comma, it's likely in pt-BR format.
+    // If it contains a comma, assume it's pt-BR format already.
     // Replace thousand separators (.) and then comma with a dot for parsing.
     if (sValue.includes(',')) {
         sValue = sValue.replace(/\./g, '').replace(',', '.');
@@ -144,22 +144,11 @@ function formatCurrency(value: any): string | any {
 
 function formatDate(value: any): string | any {
     if (!value) return null;
-    
-    // If it's a string, try to extract just the date part.
-    if (typeof value === 'string') {
-        const parts = value.split(' ');
-        const datePart = parts[0];
-        // Check if the first part is already in DD/MM/YYYY format
-        if (/^\d{2}\/\d{2}\/\d{4}$/.test(datePart)) {
-            return datePart;
-        }
-    }
 
     try {
-      // Handle JS Date objects
-      const date = new Date(value);
-       if (value instanceof Date && !isNaN(date.getTime())) {
-          return format(date, 'dd/MM/yyyy');
+      // Handle JS Date objects directly
+      if (value instanceof Date && !isNaN(value.getTime())) {
+          return format(value, 'dd/MM/yyyy');
       }
 
       // Handle Excel's numeric date format
@@ -168,7 +157,32 @@ function formatDate(value: any): string | any {
           const parsedValue = typeof value === 'string' ? parseFloat(value) : value;
           const resultDate = new Date(excelEpoch.getTime() + parsedValue * 24 * 60 * 60 * 1000);
           if (!isNaN(resultDate.getTime())) {
-              return format(resultDate, 'dd/MM/yyyy');
+              // Adjust for timezone offset to prevent day-before errors
+              const tzOffset = resultDate.getTimezoneOffset() * 60000;
+              const adjustedDate = new Date(resultDate.getTime() + tzOffset);
+              return format(adjustedDate, 'dd/MM/yyyy');
+          }
+      }
+
+      // Handle string dates (e.g., "MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD")
+      if (typeof value === 'string') {
+          const datePart = value.split(' ')[0]; // Remove time part if it exists
+          let date;
+          // Try parsing MM/DD/YYYY
+          if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(datePart)) {
+              const parts = datePart.split('/');
+              // new Date(year, month-1, day)
+              date = new Date(Number(parts[2]), Number(parts[0]) - 1, Number(parts[1]));
+          } else {
+              // Fallback for other formats like YYYY-MM-DD or native JS string parsing
+              date = new Date(datePart);
+          }
+
+          if (date && !isNaN(date.getTime())) {
+              // Adjust for timezone offset
+              const tzOffset = date.getTimezoneOffset() * 60000;
+              const adjustedDate = new Date(date.getTime() + tzOffset);
+              return format(adjustedDate, 'dd/MM/yyyy');
           }
       }
     } catch(e) {
