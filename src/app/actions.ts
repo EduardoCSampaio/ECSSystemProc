@@ -656,8 +656,6 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
-
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
 
         if (String(sourceRow['PRODUTO'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
@@ -703,7 +701,11 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
-        newRow['DAT_CREDITO'] = isPago ? formatDate(sourceRow['STATUS DA DATA']) : '';
+        
+        const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
+        const formattedDate = formatDate(sourceRow['STATUS DA DATA']);
+        newRow['DAT_CREDITO'] = isPago && formattedDate && !formattedDate.endsWith('1899') ? formattedDate : '';
+
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
