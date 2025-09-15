@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { FileText, LayoutDashboard, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -45,37 +45,67 @@ export default function Home() {
           </CardHeader>
           <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-6">
             <Button asChild size="lg">
-              <Link href="/v8digital">V8DIGITAL</Link>
+              <Link href="/v8digital">
+                <CheckCircle className="mr-2" />
+                V8DIGITAL
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/unno">UNNO</Link>
+              <Link href="/unno">
+                <CheckCircle className="mr-2" />
+                UNNO
+              </Link>
             </Button>
             <Button asChild size="lg">
-              <Link href="/glm-crefisacp">GLM - CREFISACP</Link>
+              <Link href="/glm-crefisacp">
+                <XCircle className="mr-2" />
+                GLM - CREFISACP
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/queromais">QUERO+</Link>
+              <Link href="/queromais">
+                <XCircle className="mr-2" />
+                QUERO+
+              </Link>
             </Button>
             <Button asChild size="lg">
-              <Link href="/lev">LEV (Diversos Bancos)</Link>
+              <Link href="/lev">
+                <CheckCircle className="mr-2" />
+                LEV (Diversos)
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/facta">FACTA</Link>
+              <Link href="/facta">
+                <XCircle className="mr-2" />
+                FACTA
+              </Link>
             </Button>
             {/* <Button asChild size="lg">
               <Link href="/presencabank">PRESENÇABANK</Link>
             </Button> */}
             <Button asChild size="lg">
-              <Link href="/qualibanking">QUALIBANKING</Link>
+              <Link href="/qualibanking">
+                <XCircle className="mr-2" />
+                QUALIBANKING
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/pan">PAN</Link>
+              <Link href="/pan">
+                <CheckCircle className="mr-2" />
+                PAN
+              </Link>
             </Button>
             <Button asChild size="lg">
-              <Link href="/brb-inconta">BRB-INCONTA</Link>
+              <Link href="/brb-inconta">
+                <CheckCircle className="mr-2" />
+                BRB-INCONTA
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/neocredito">NEOCREDITO</Link>
+              <Link href="/neocredito">
+                <XCircle className="mr-2" />
+                NEOCREDITO
+              </Link>
             </Button>
             {/* <Button asChild size="lg" variant="secondary">
               <Link href="/prata-digital">PRATA DIGITAL</Link>
@@ -84,7 +114,10 @@ export default function Home() {
               <Link href="/phtech">PHTECH</Link>
             </Button> */}
             <Button asChild size="lg">
-              <Link href="/totalcash">TOTALCASH</Link>
+              <Link href="/totalcash">
+                <XCircle className="mr-2" />
+                TOTALCASH
+              </Link>
             </Button>
             {/* <Button asChild size="lg">
               <Link href="/amigoz">AMIGOZ</Link>
@@ -102,7 +135,10 @@ export default function Home() {
               <Link href="/digio">DIGIO</Link>
             </Button> */}
             <Button asChild size="lg" variant="secondary">
-              <Link href="/2tech">2TECH</Link>
+              <Link href="/2tech">
+                <XCircle className="mr-2" />
+                2TECH
+              </Link>
             </Button>
           </CardContent>
         </Card>

@@ -12,7 +12,7 @@ export default function LevPage() {
           <div className="flex items-center gap-3">
             <ClipboardPaste className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-headline font-bold text-foreground">
-              LEV (Diversos Bancos) - Processador de Propostas
+              LEV (Diversos) - Processador de Propostas
             </h1>
           </div>
           <div className="flex items-center gap-4">
