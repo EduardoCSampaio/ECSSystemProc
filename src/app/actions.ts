@@ -224,7 +224,7 @@ function formatCurrency(value: any): string {
     }
     
     // Format to pt-BR standard, which uses ',' for decimal and '.' for thousands.
-    return num.toLocaleString('pt-BR', {
+    return num.toLocaleString('pt-br', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
@@ -447,9 +447,9 @@ function processUnno(data: any[]): any[] {
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
-        newRow['COD_GRUPO_UNidade_EMPRESA'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_TIPO_FUNCAO'] = '';
-        newRow['COD_TIPO_PROPOSTA_EMPRESTimo'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
         newRow['COD_LOJA_DIGITACAO'] = '';
         newRow['VAL_SEGURO'] = '';
         return newRow;
@@ -655,7 +655,11 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'BRB - INCONTA';
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+        if (String(sourceRow['TABELA'] || '').toUpperCase() === 'CONTRATO NOVO') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
+        } else {
+            newRow['DSC_TIPO_PROposta_EMPRESTIMO'] = sourceRow['TABELA'];
+        }
         newRow['COD_PRODUTO'] = '';
 
         if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
@@ -855,4 +859,5 @@ export async function processExcelFile(
 }
 
     
+
 
