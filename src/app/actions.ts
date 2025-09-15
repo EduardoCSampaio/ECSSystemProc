@@ -1014,17 +1014,17 @@ function processQualibanking(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'QUALIBANKING';
         newRow['NUM_PROPOSTA'] = sourceRow['Número do Contrato'];
         newRow['NUM_CONTRATO'] = sourceRow['Número do Contrato'];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['Nome da Tabela'];
+        newRow['DSC_PRODUTO'] = sourceRow['Nome da Tabela'];
         newRow['COD_PRODUTO'] = '';
         
         // Conditional logic for "Tipo de Operação"
         const tipoOperacao = String(sourceRow['Tipo de Operação'] || '').trim().toUpperCase();
         if (tipoOperacao === 'REFIN DA PORTABILIDADE' || tipoOperacao === 'REFINANCIAMENTO DA PORTABILIDADE') {
-            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
         } else if (tipoOperacao.includes('PORTABILIDADE + REFIN')) {
-            newRow['DSC_PRODUTO'] = 'PORTABILIDADE';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTABILIDADE';
         } else {
-            newRow['DSC_PRODUTO'] = String(sourceRow['Tipo de Operação'] || '').trim();
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = String(sourceRow['Tipo de Operação'] || '').trim();
         }
 
         newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
@@ -1057,7 +1057,7 @@ function processQualibanking(data: any[]): any[] {
         newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['Valor da Parcela']);
 
         // Conditional logic for "Valor do Empréstimo"
-        if (newRow['DSC_PRODUTO'] === 'PORTABILIDADE') {
+        if (newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'PORTABILIDADE') {
             newRow['VAL_BRUTO'] = formatCurrency('0');
         } else {
             newRow['VAL_BRUTO'] = formatCurrency(sourceRow['Valor do Empréstimo']);
