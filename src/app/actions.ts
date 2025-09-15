@@ -224,7 +224,8 @@ const QUALIBANKING_INPUT_FIELDS = [
     "Valor da Parcela",
     "Valor do Empréstimo",
     "Valor Líquido ao Cliente",
-    "Data do Crédito ao Cliente"
+    "Data do Crédito ao Cliente",
+    "Nome da Tabela"
 ];
 const QUALIBANKING_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
@@ -1002,7 +1003,7 @@ function processQualibanking(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'QUALIBANKING';
         newRow['NUM_PROPOSTA'] = sourceRow['Número do Contrato'];
         newRow['NUM_CONTRATO'] = sourceRow['Número do Contrato'];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['Nome do Produto'];
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['Nome da Tabela'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['Tipo de Operação'];
         newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
