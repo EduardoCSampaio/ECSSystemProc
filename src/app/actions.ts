@@ -188,6 +188,26 @@ const GLM_CREFISACP_INPUT_FIELDS = [
 ];
 const GLM_CREFISACP_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
+
+// =================================================================
+// QUERO+ Configuration
+// =================================================================
+const QUEROMAIS_INPUT_FIELDS = [
+    "NUM_PROPOSTA",
+    "DSC_TIPO_PROPOSTA_EMPRESTIMO",
+    "DSC_PRODUTO",
+    "DSC_SITUACAO_EMPRESTIMO",
+    "DAT_EMPRESTIMO",
+    "NIC_CTR_USUARIO",
+    "COD_CPF_CLIENTE",
+    "NOM_CLIENTE",
+    "QTD_PARCELA",
+    "VAL_BRUTO",
+    "VAL_LIQUIDO",
+    "DAT_CREDITO"
+];
+const QUEROMAIS_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
 // =================================================================
 // Generic Configurations
 // =================================================================
@@ -721,9 +741,8 @@ function processBrbInconta(data: any[]): any[] {
         const statusDateKey = Object.keys(sourceRow).find(key => key.toUpperCase().trim() === 'STATUS DATA');
         const statusDateValue = statusDateKey ? sourceRow[statusDateKey] : undefined;
 
-        if (isPago && statusDateValue) {
-            newRow['DAT_CREDITO'] = formatDate(statusDateValue);
-        } else {
+        newRow['DAT_CREDITO'] = formatDate(statusDateValue);
+        if (!isPago) {
             newRow['DAT_CREDITO'] = '';
         }
 
@@ -835,6 +854,94 @@ function processGlmCrefisacp(data: any[]): any[] {
     });
 }
 
+// =================================================================
+// QUERO+ Processing Logic
+// =================================================================
+function processQueroMais(data: any[]): any[] {
+    const today = format(new Date(), 'dd/MM/yyyy');
+
+    return data.map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+
+        // Map and transform data based on QUERO+ rules
+        newRow['NUM_BANCO'] = 465;
+        newRow['NOM_BANCO'] = 'QUERO+';
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_PROPOSTA'];
+        
+        let tipoProposta = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
+        if (String(tipoProposta || '').toUpperCase().trim() === 'CARTÃO C/ SAQUE') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'CARTÃO';
+        } else {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = tipoProposta;
+        }
+
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'];
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['DSC_SITUACAO_EMPRESTIMO'];
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DAT_EMPRESTIMO']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'];
+        newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'];
+        newRow['DAT_NASCIMENTO'] = '01/01/1990';
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['QTD_PARCELA'];
+        newRow['VAL_PRESTACAO'] = '';
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VAL_BRUTO']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VAL_LIQUIDO']);
+
+        let datCredito = formatDate(sourceRow['DAT_CREDITO']);
+        if (datCredito === '00/00/0000' || datCredito.endsWith('1899')) {
+            newRow['DAT_CREDITO'] = '';
+        } else {
+            newRow['DAT_CREDITO'] = datCredito;
+        }
+
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+        return newRow;
+    });
+}
+
 
 // =================================================================
 // Placeholder Processing Logic for new systems
@@ -923,6 +1030,9 @@ export async function processExcelFile(
             outputFields = GLM_CREFISACP_OUTPUT_FIELDS;
             break;
         case 'QUEROMAIS':
+            processedData = processQueroMais(filteredData);
+            outputFields = QUEROMAIS_OUTPUT_FIELDS;
+            break;
         case 'FACTA':
         case 'PRESENCABANK':
         case 'QUALIBANKING':

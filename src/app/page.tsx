@@ -27,7 +27,7 @@ const systems: System[] = [
     { name: "LEV (Diversos)", href: "/lev", variant: "default", active: true },
     { name: "BRB-INCONTA", href: "/brb-inconta", variant: "default", active: true },
     { name: "GLM - CREFISACP", href: "/glm-crefisacp", variant: "default", active: true },
-    { name: "QUERO+", href: "/queromais", variant: "secondary", active: false },
+    { name: "QUERO+", href: "/queromais", variant: "secondary", active: true },
     { name: "FACTA", href: "/facta", variant: "secondary", active: false },
     { name: "QUALIBANKING", href: "/qualibanking", variant: "default", active: false },
     { name: "NEOCREDITO", href: "/neocredito", variant: "secondary", active: false },
@@ -42,7 +42,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="p-4 border-b border-border/50 shadow-sm bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <FileText className="h-7 w-7 text-primary" />
