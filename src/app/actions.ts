@@ -160,7 +160,7 @@ const BRB_INCONTA_INPUT_FIELDS = [
   "VALOR DE PARCELA",
   "VALOR PRINCIPAL",
   "VALOR LIQUIDO",
-  "SATUS DA DATA",
+  "STATUS DA DATA",
   "TAXA MENSAL",
 ];
 
@@ -700,7 +700,7 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow['SATUS DA DATA']);
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DA DATA']);
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
