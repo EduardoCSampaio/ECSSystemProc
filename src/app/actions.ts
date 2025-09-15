@@ -1018,13 +1018,13 @@ function processQualibanking(data: any[]): any[] {
         newRow['COD_PRODUTO'] = '';
         
         // Conditional logic for "Tipo de Operação"
-        let tipoOperacao = String(sourceRow['Tipo de Operação'] || '').trim();
-        if (tipoOperacao.toUpperCase() === 'REFIN DA PORTABILIDADE') {
+        const tipoOperacao = String(sourceRow['Tipo de Operação'] || '').trim().toUpperCase();
+        if (tipoOperacao === 'REFIN DA PORTABILIDADE' || tipoOperacao === 'REFINANCIAMENTO DA PORTABILIDADE') {
             newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
-        } else if (tipoOperacao.toUpperCase().includes('PORTABILIDADE + REFIN')) {
+        } else if (tipoOperacao.includes('PORTABILIDADE + REFIN')) {
             newRow['DSC_PRODUTO'] = 'PORTABILIDADE';
         } else {
-            newRow['DSC_PRODUTO'] = tipoOperacao;
+            newRow['DSC_PRODUTO'] = String(sourceRow['Tipo de Operação'] || '').trim();
         }
 
         newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
@@ -1240,3 +1240,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
