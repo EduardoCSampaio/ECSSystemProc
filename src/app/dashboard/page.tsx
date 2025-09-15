@@ -26,7 +26,7 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Bar, BarChart as RechartsBarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 
 export type ProcessHistoryItem = {
@@ -316,5 +316,3 @@ export default function DashboardPage() {
 
 // Re-importing FileText since it's used in the Card.
 import { FileText } from "lucide-react";
-
-    
