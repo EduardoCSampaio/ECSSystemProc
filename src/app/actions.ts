@@ -646,7 +646,6 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
@@ -655,18 +654,15 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'BRB - INCONTA';
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
-        if (String(sourceRow['TABELA'] || '').toUpperCase() === 'CONTRATO NOVO') {
+        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else {
-            newRow['DSC_TIPO_PROposta_EMPRESTIMO'] = sourceRow['TABELA'];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
         }
         newRow['COD_PRODUTO'] = '';
 
-        if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
-            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
-        } else {
-            newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
-        }
+        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+        
 
         newRow['DAT_CTR_INCLUSAO'] = today;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
@@ -859,5 +855,6 @@ export async function processExcelFile(
 }
 
     
+
 
 
