@@ -522,6 +522,10 @@ function processLev(data: any[]): any[] {
         const newRow: { [key: string]: any } = {};
 
         const nomBanco = String(sourceRow['NOM_BANCO'] || '').toUpperCase();
+        
+        newRow['NOM_BANCO'] = sourceRow['NOM_BANCO'];
+        newRow['NUM_BANCO'] = sourceRow['NUM_BANCO'] || sourceRow['NUM_BAN'];
+
         if (nomBanco.includes('OLE')) {
             newRow['NOM_BANCO'] = 'OLÉ';
             newRow['NUM_BANCO'] = 169;
@@ -534,12 +538,8 @@ function processLev(data: any[]): any[] {
         } else if (nomBanco.includes('MASTER')) {
             newRow['NOM_BANCO'] = 'MASTER';
             newRow['NUM_BANCO'] = 243;
-        } else {
-             newRow['NUM_BANCO'] = sourceRow['NUM_BAN'] || sourceRow['NUM_BANCO'];
-             newRow['NOM_BANCO'] = sourceRow['NOM_BANCO'];
         }
-
-        // Apply generic transformations and fill missing fields
+        
         newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
         newRow['NUM_CONTRATO'] = sourceRow['NUM_PROPOSTA'];
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
