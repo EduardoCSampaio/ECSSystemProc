@@ -113,6 +113,32 @@ const UNNO_INPUT_FIELDS = [
 const UNNO_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 // =================================================================
+// PAN Configuration
+// =================================================================
+const PAN_INPUT_FIELDS = [
+  "NUM_BAN",
+  "NOM_BANCO",
+  "NUM_PROPOSTA",
+  "NUM_CONTRATO",
+  "DSC_TIPO_PROPOSTA_EMPRESTIMO",
+  "DSC_PRODUTO",
+  "DSC_SITUACAO_EMPRESTIMO",
+  "DAT_EMPRESTIMO",
+  "NIC_CTR_USUARIO",
+  "COD_CPF_CLIENTE",
+  "NOM_CLIENTE",
+  "DAT_NASCIMENTO",
+  "QTD_PARCELA",
+  "VAL_PRESTACAO",
+  "VAL_BRUTO",
+  "VAL_LIQUIDO",
+  "DAT_CREDITO",
+];
+
+const PAN_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
+
+// =================================================================
 // GLM-CREFISACP Configuration
 // =================================================================
 const GLM_CREFISACP_INPUT_FIELDS = []; // TODO: Define input fields
@@ -386,6 +412,83 @@ function processUnno(data: any[]): any[] {
 }
 
 // =================================================================
+// PAN Processing Logic
+// =================================================================
+function processPan(data: any[]): any[] {
+    const today = format(new Date(), 'dd/MM/yyyy');
+
+    return data
+      .filter(sourceRow => sourceRow['NUM_PROPOSTA'] && String(sourceRow['NUM_PROPOSTA']).trim() !== '')
+      .map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+
+        // Map and transform data based on PAN rules
+        newRow['NUM_BANCO'] = sourceRow['NUM_BAN'];
+        newRow['NOM_BANCO'] = sourceRow['NOM_BANCO'];
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'];
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'];
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['DSC_SITUACAO_EMPRESTIMO'];
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DAT_EMPRESTIMO']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'];
+        newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'];
+        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DAT_NASCIMENTO']);
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['QTD_PARCELA'];
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VAL_PRESTACAO']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VAL_BRUTO']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VAL_LIQUIDO']);
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['DAT_CREDITO']);
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+        return newRow;
+    });
+}
+
+
+// =================================================================
 // Placeholder Processing Logic for new systems
 // =================================================================
 function processGeneric(data: any[], system: string): any[] {
@@ -443,13 +546,16 @@ export async function processExcelFile(
             processedData = processUnno(filteredData);
             outputFields = UNNO_OUTPUT_FIELDS;
             break;
+        case 'PAN':
+            processedData = processPan(filteredData);
+            outputFields = PAN_OUTPUT_FIELDS;
+            break;
         case 'GLM-CREFISACP':
         case 'QUEROMAIS':
         case 'LEV':
         case 'FACTA':
         case 'PRESENCABANK':
         case 'QUALIBANKING':
-        case 'PAN':
         case 'BRB-INCONTA':
         case 'NEOCREDITO':
         case 'PRATA DIGITAL':
@@ -503,6 +609,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
-    
