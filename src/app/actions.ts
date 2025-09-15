@@ -206,7 +206,7 @@ const QUEROMAIS_INPUT_FIELDS = [
     "VAL_LIQUIDO",
     "DAT_CREDITO"
 ];
-const QUEROMAIS_OUTPUT_FIELDS = V8DIGital_OUTPUT_FIELDS;
+const QUEROMAIS_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 // =================================================================
 // QUALIBANKING Configuration
