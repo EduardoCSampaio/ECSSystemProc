@@ -548,9 +548,7 @@ function processLev(data: any[]): any[] {
     return data
       .filter(sourceRow => {
             const nomBanco = String(sourceRow['NOM_BANCO'] || '').toUpperCase();
-            const hasRequiredBank = requiredBanks.some(bank => nomBanco.includes(bank));
-            const hasProposal = sourceRow['NUM_PROPOSTA'] && String(sourceRow['NUM_PROPOSTA']).trim() !== '';
-            return hasRequiredBank && hasProposal;
+            return requiredBanks.some(bank => nomBanco.includes(bank));
       })
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
@@ -648,7 +646,6 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => sourceRow['ID'] && String(sourceRow['ID']).trim() !== '')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
