@@ -464,7 +464,11 @@ function processPan(data: any[]): any[] {
         newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'];
         newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'];
         newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'];
-        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DAT_NASCIMENTO']);
+        let datNasc = formatDate(sourceRow['DAT_NASCIMENTO']);
+        if (!datNasc) {
+            datNasc = '01/01/1990';
+        }
+        newRow['DAT_NASCIMENTO'] = datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
@@ -564,7 +568,11 @@ function processLev(data: any[]): any[] {
         newRow['NIC_CTR_USUARIO'] = sourceRow['NIC_CTR_USUARIO'];
         newRow['COD_CPF_CLIENTE'] = sourceRow['COD_CPF_CLIENTE'];
         newRow['NOM_CLIENTE'] = sourceRow['NOM_CLIENTE'];
-        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DAT_NASCIMENTO']);
+        let datNasc = formatDate(sourceRow['DAT_NASCIMENTO']);
+        if (!datNasc) {
+            datNasc = '01/01/1990';
+        }
+        newRow['DAT_NASCIMENTO'] = datNasc;
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
