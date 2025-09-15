@@ -168,10 +168,17 @@ function formatCurrency(value: any): string {
     }
 
     let sValue = String(value).trim();
-
-    // Clean the string for parseFloat: remove thousand separators (.) and replace decimal comma (,) with a dot (.)
-    sValue = sValue.replace(/\./g, '').replace(',', '.');
     
+    // Check if the string contains a comma, which suggests it's already in a pt-BR-like format.
+    const hasComma = sValue.includes(',');
+
+    if (hasComma) {
+      // It's likely pt-BR format ("1.234,56"), so remove thousand separators (.) and replace decimal comma (,)
+      sValue = sValue.replace(/\./g, '').replace(',', '.');
+    }
+    // If it has no comma but has a dot, it's likely US format ("1234.56").
+    // We don't need to do anything in this case, as parseFloat handles it.
+
     const num = parseFloat(sValue);
     
     if (isNaN(num)) {
