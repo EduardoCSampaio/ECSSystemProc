@@ -2,7 +2,7 @@
 "use server";
 
 import * as XLSX from "xlsx";
-import { format } from "date-fns";
+import { format, subMonths, isAfter, parse } from "date-fns";
 
 // =================================================================
 // V8DIGITAL Configuration
@@ -206,7 +206,27 @@ const QUEROMAIS_INPUT_FIELDS = [
     "VAL_LIQUIDO",
     "DAT_CREDITO"
 ];
-const QUEROMAIS_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+const QUEROMAIS_OUTPUT_FIELDS = V8DIGital_OUTPUT_FIELDS;
+
+// =================================================================
+// QUALIBANKING Configuration
+// =================================================================
+const QUALIBANKING_INPUT_FIELDS = [
+    "Número do Contrato",
+    "Nome do Produto",
+    "Tipo de Operação",
+    "Status",
+    "Data da Proposta",
+    "Login",
+    "CPF",
+    "Nome",
+    "Prazo",
+    "Valor da Parcela",
+    "Valor do Empréstimo",
+    "Valor Líquido ao Cliente",
+    "Data do Crédito ao Cliente"
+];
+const QUALIBANKING_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 // =================================================================
 // Generic Configurations
@@ -296,27 +316,24 @@ function formatDate(value: any): string {
     if (typeof value === 'string') {
         // Normalize string: remove time part, replace separators
         const datePart = value.split(' ')[0];
-        const parts = datePart.split(/[/-]/);
         let date: Date | undefined;
 
-        if (parts.length === 3) {
-            const [p1, p2, p3] = parts;
-            // YYYY-MM-DD or YYYY/MM/DD
-            if (p1.length === 4) {
-                date = new Date(Number(p1), Number(p2) - 1, Number(p3));
-            } 
-            // DD/MM/YYYY or DD-MM-YYYY
-            else if (p3.length === 4) {
-                 date = new Date(Number(p3), Number(p2) - 1, Number(p1));
+        // Try parsing DD/MM/YYYY or DD-MM-YYYY first
+        if (/^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(datePart)) {
+            date = parse(datePart, 'dd/MM/yyyy', new Date());
+            if (isNaN(date.getTime())) {
+                 date = parse(datePart, 'dd-MM-yyyy', new Date());
             }
-             // MM/DD/YYYY or MM-DD-YYYY (heuristic)
-            else if (Number(p1) <= 12 && Number(p2) <= 31) { // Check if first part is a valid month
-                 date = new Date(new Date().getFullYear().toString().substr(0, 2) + p3, Number(p1) - 1, Number(p2)); // Handles MM/DD/YY
-            } else {
-                 date = new Date(new Date().getFullYear().toString().substr(0, 2) + p3, Number(p2) - 1, Number(p1)); // Fallback to DD/MM/YY
-            }
-        } else {
-             // Fallback for other formats Date can parse
+        }
+        // Try parsing YYYY-MM-DD or YYYY/MM/DD
+        else if (/^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/.test(datePart)) {
+             date = parse(datePart, 'yyyy-MM-dd', new Date());
+             if (isNaN(date.getTime())) {
+                date = parse(datePart, 'yyyy/MM/dd', new Date());
+             }
+        }
+        // Fallback for other formats Date can parse
+        else {
              date = new Date(value);
         }
 
@@ -741,8 +758,9 @@ function processBrbInconta(data: any[]): any[] {
         const statusDateKey = Object.keys(sourceRow).find(key => key.toUpperCase().trim() === 'STATUS DATA');
         const statusDateValue = statusDateKey ? sourceRow[statusDateKey] : undefined;
 
-        newRow['DAT_CREDITO'] = formatDate(statusDateValue);
-        if (!isPago) {
+        if (isPago) {
+            newRow['DAT_CREDITO'] = formatDate(statusDateValue);
+        } else {
             newRow['DAT_CREDITO'] = '';
         }
 
@@ -942,6 +960,108 @@ function processQueroMais(data: any[]): any[] {
     });
 }
 
+// =================================================================
+// QUALIBANKING Processing Logic
+// =================================================================
+function processQualibanking(data: any[]): any[] {
+    const today = new Date();
+    const twoMonthsAgo = subMonths(today, 2);
+    const todayFormatted = format(today, 'dd/MM/yyyy');
+
+    return data
+      .filter(sourceRow => {
+            const proposalDateValue = sourceRow['Data da Proposta'];
+            if (!proposalDateValue) return false;
+
+            let proposalDate: Date | undefined;
+
+            if (proposalDateValue instanceof Date && !isNaN(proposalDateValue.getTime())) {
+                proposalDate = proposalDateValue;
+            } else if (typeof proposalDateValue === 'number') {
+                const excelEpoch = new Date(1899, 11, 30);
+                proposalDate = new Date(excelEpoch.getTime() + proposalDateValue * 24 * 60 * 60 * 1000);
+            } else if (typeof proposalDateValue === 'string') {
+                proposalDate = parse(proposalDateValue, 'dd/MM/yyyy', new Date());
+                 if (isNaN(proposalDate.getTime())) {
+                    proposalDate = new Date(proposalDateValue);
+                 }
+            }
+
+            if (proposalDate && !isNaN(proposalDate.getTime())) {
+                // Adjust for timezone before comparison
+                const adjustedProposalDate = new Date(proposalDate.getTime() + (proposalDate.getTimezoneOffset() * 60000));
+                return isAfter(adjustedProposalDate, twoMonthsAgo);
+            }
+
+            return false;
+      })
+      .map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+
+        newRow['NUM_BANCO'] = 22;
+        newRow['NOM_BANCO'] = 'QUALIBANKING';
+        newRow['NUM_PROPOSTA'] = sourceRow['Número do Contrato'];
+        newRow['NUM_CONTRATO'] = sourceRow['Número do Contrato'];
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['Nome do Produto'];
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = sourceRow['Tipo de Operação'];
+        newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['Status'];
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['Data da Proposta']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['Login'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
+        newRow['NOM_CLIENTE'] = sourceRow['Nome'];
+        newRow['DAT_NASCIMENTO'] = '01/01/1990';
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['Prazo'];
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['Valor da Parcela']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['Valor do Empréstimo']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['Valor Líquido ao Cliente']);
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['Data do Crédito ao Cliente']);
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+        return newRow;
+    });
+}
+
 
 // =================================================================
 // Placeholder Processing Logic for new systems
@@ -1033,9 +1153,12 @@ export async function processExcelFile(
             processedData = processQueroMais(filteredData);
             outputFields = QUEROMAIS_OUTPUT_FIELDS;
             break;
+        case 'QUALIBANKING':
+            processedData = processQualibanking(filteredData);
+            outputFields = QUALIBANKING_OUTPUT_FIELDS;
+            break;
         case 'FACTA':
         case 'PRESENCABANK':
-        case 'QUALIBANKING':
         case 'NEOCREDITO':
         case 'PRATA DIGITAL':
         case 'PHTECH':
@@ -1054,7 +1177,7 @@ export async function processExcelFile(
     }
 
     if (processedData.length === 0) {
-        throw new Error("No data was extracted. Please check if the data rows are empty or if the column headers are correct.");
+        throw new Error("No data was extracted. Please check if the data rows are empty, if the column headers are correct, or if they match the specified filters (e.g., date range).");
     }
 
     // Ensure final output has all columns in the correct order
