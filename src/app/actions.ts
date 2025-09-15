@@ -646,7 +646,6 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => String(sourceRow['STATUS'] || '').toUpperCase() === 'PAGO')
       .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
@@ -657,14 +656,17 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
-            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
-        } else if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
+        const isPago = String(sourceRow['STATUS'] || '').toUpperCase() === 'PAGO';
+
+        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
-            newRow['DSC_PRODUTO'] = 'NOVO';
         } else {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+        }
+        
+        if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
+            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
+        } else {
             newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
         }
 
@@ -705,7 +707,7 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DA DATA']);
+        newRow['DAT_CREDITO'] = isPago ? formatDate(sourceRow['STATUS DA DATA']) : '';
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
