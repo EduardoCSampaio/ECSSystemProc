@@ -349,13 +349,13 @@ function formatDate(value: any): string {
 }
 
 /**
- * Extracts an interest rate (e.g., "1,85%") from a string.
+ * Extracts an interest rate (e.g., "1,85") from a string.
  * @param text The string to search within.
- * @returns The found interest rate or an empty string.
+ * @returns The found interest rate without the '%' symbol, or an empty string.
  */
 function extractInterestRate(text: string): string {
     if (!text) return '';
-    const match = text.match(/\d{1,2},\d{1,2}%/);
+    const match = String(text).match(/\d{1,2},\d{1,2}/);
     return match ? match[0] : '';
 }
 
@@ -1021,7 +1021,7 @@ function processQualibanking(data: any[]): any[] {
         let tipoOperacao = String(sourceRow['Tipo de Operação'] || '').trim();
         if (tipoOperacao.toUpperCase() === 'REFIN DA PORTABILIDADE') {
             newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
-        } else if (tipoOperacao.toUpperCase() === 'PORTABILIDADE + REFIN') {
+        } else if (tipoOperacao.toUpperCase().includes('PORTABILIDADE + REFIN')) {
             newRow['DSC_PRODUTO'] = 'PORTABILIDADE';
         } else {
             newRow['DSC_PRODUTO'] = tipoOperacao;
