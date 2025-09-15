@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { ArrowLeft, LayoutDashboard, Trash2, AlertTriangle, Calendar as CalendarIcon, X as XIcon, BarChart } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Trash2, AlertTriangle, Calendar as CalendarIcon, X as XIcon, FileText, BarChart2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +136,7 @@ export default function DashboardPage() {
              <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Processamentos (Filtrado)</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
+                <BarChart2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{isClient ? sortedHistory.length : 0}</div>
@@ -313,6 +313,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-// Re-importing FileText since it's used in the Card.
-import { FileText } from "lucide-react";
