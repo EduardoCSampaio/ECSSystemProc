@@ -140,7 +140,7 @@ const PAN_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 // =================================================================
 // LEV Configuration
 // =================================================================
-const LEV_INPUT_FIELDS = PAN_INPUT_FIELDS; // Assume os mesmos campos do PAN por enquanto
+const LEV_INPUT_FIELDS = PAN_INPUT_FIELDS; 
 const LEV_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 
@@ -521,12 +521,6 @@ function processLev(data: any[]): any[] {
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
-        // Start with direct mapping
-        Object.keys(sourceRow).forEach(key => {
-            newRow[key] = sourceRow[key];
-        });
-
-        // Bank-specific transformations
         const nomBanco = String(sourceRow['NOM_BANCO'] || '').toUpperCase();
         if (nomBanco.includes('OLE')) {
             newRow['NOM_BANCO'] = 'OLÉ';
