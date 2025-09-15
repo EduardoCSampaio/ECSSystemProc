@@ -815,15 +815,15 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'CREFISACP';
         newRow['NUM_PROPOSTA'] = sourceRow['PROPOSTA'];
         newRow['NUM_CONTRATO'] = sourceRow['PROPOSTA'];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
 
         const tabelaUpper = String(sourceRow['TABELA'] || '').toUpperCase();
         if (tabelaUpper.includes('NOVO')) {
-            newRow['DSC_PRODUTO'] = 'NOVO';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else if (tabelaUpper.includes('REFIN')) {
-            newRow['DSC_PRODUTO'] = 'REFIN';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'REFIN';
         } else {
-            newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
         }
 
         newRow['COD_PRODUTO'] = '';
@@ -1240,5 +1240,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
+    
 
     
