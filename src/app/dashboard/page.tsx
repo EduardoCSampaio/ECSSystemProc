@@ -40,10 +40,42 @@ export default function DashboardPage() {
   const [history, setHistory] = useLocalStorage<ProcessHistoryItem[]>('processHistory', []);
   const [isClient, setIsClient] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>(undefined);
+  
+  // State for chart data to be computed on client
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartConfig, setChartConfig] = useState<ChartConfig>({});
+  const [processCounts, setProcessCounts] = useState<Record<string, number>>({});
+
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      const counts = history.reduce((acc, item) => {
+        acc[item.system] = (acc[item.system] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      setProcessCounts(counts);
+      
+      const data = Object.entries(counts).map(([system, count]) => ({
+        system,
+        count,
+      })).sort((a,b) => b.count - a.count);
+      setChartData(data);
+      
+      const config: ChartConfig = {};
+      data.forEach((item, index) => {
+          config[item.system] = {
+              label: item.system,
+              color: `hsl(var(--chart-${(index % 5) + 1}))`,
+          };
+      });
+      setChartConfig(config);
+    }
+  }, [history, isClient]);
+
 
   const handleClearHistory = () => {
     setHistory([]);
@@ -62,30 +94,6 @@ export default function DashboardPage() {
   }) : [];
 
   const sortedHistory = [...filteredHistory].sort((a, b) => new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime());
-
-  const { processCounts, chartData, chartConfig } = useMemo(() => {
-    if (!isClient) return { processCounts: {}, chartData: [], chartConfig: {} };
-
-    const counts = history.reduce((acc, item) => {
-      acc[item.system] = (acc[item.system] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const data = Object.entries(counts).map(([system, count]) => ({
-      system,
-      count,
-    })).sort((a,b) => b.count - a.count);
-
-    const config: ChartConfig = {};
-    data.forEach((item, index) => {
-        config[item.system] = {
-            label: item.system,
-            color: `hsl(var(--chart-${(index % 5) + 1}))`,
-        };
-    });
-    
-    return { processCounts: counts, chartData: data, chartConfig: config };
-  }, [history, isClient]);
 
 
   return (
