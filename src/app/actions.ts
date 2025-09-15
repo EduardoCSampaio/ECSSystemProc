@@ -646,6 +646,7 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
+      .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
