@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -188,7 +189,9 @@ const ChartTooltipContent = React.forwardRef<
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color || item.payload.fill || item.color
+            const indicatorColor = color || item.payload.fill || item.color;
+            const payloadValue = item.value;
+
 
             return (
               <div
@@ -198,8 +201,8 @@ const ChartTooltipContent = React.forwardRef<
                   indicator === "dot" && "items-center"
                 )}
               >
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
+                {formatter && payloadValue !== undefined && item.name ? (
+                  formatter(payloadValue, item.name, item, index, item.payload)
                 ) : (
                   <>
                     {itemConfig?.icon ? (
@@ -238,9 +241,9 @@ const ChartTooltipContent = React.forwardRef<
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {payloadValue && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {typeof payloadValue === 'number' ? payloadValue.toLocaleString() : payloadValue}
                         </span>
                       )}
                     </div>
@@ -363,3 +366,5 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    
