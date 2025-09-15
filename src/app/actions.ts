@@ -176,8 +176,8 @@ const GLM_CREFISACP_INPUT_FIELDS = [
     "STATUS_CONTRATO",
     "CRIACAO AF",
     "AGENTE",
-    "CPF",
-    "NOME",
+    "CNPJ_CPF",
+    "CLIENTE",
     "DATA DE NASCIMENTO",
     "PRAZO",
     "VALOR_PARCELA",
@@ -837,8 +837,8 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
         newRow['NIC_CTR_USUARIO'] = sourceRow['AGENTE'];
-        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
-        newRow['NOM_CLIENTE'] = sourceRow['NOME'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['CNPJ_CPF'];
+        newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
         newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DATA DE NASCIMENTO']);
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
