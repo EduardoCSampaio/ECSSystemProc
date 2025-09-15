@@ -702,9 +702,14 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
         
+        // Step 1: Always try to format the date from 'STATUS DA DATA'
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DA DATA']);
+
+        // Step 2: Clear the date if the status is not 'Pago'
         const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
-        const formattedDate = formatDate(sourceRow['STATUS DA DATA']);
-        newRow['DAT_CREDITO'] = isPago && formattedDate && !formattedDate.endsWith('1899') ? formattedDate : '';
+        if (!isPago) {
+            newRow['DAT_CREDITO'] = '';
+        }
 
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
@@ -759,7 +764,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, raw: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
