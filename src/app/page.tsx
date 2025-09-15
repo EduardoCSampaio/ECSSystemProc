@@ -9,8 +9,36 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FileText, LayoutDashboard, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+
+
+type System = {
+  name: string;
+  href: string;
+  variant: 'default' | 'secondary';
+  active: boolean;
+};
+
+const systems: System[] = [
+    { name: "V8DIGITAL", href: "/v8digital", variant: "default", active: true },
+    { name: "UNNO", href: "/unno", variant: "secondary", active: true },
+    { name: "PAN", href: "/pan", variant: "secondary", active: true },
+    { name: "LEV (Diversos)", href: "/lev", variant: "default", active: true },
+    { name: "BRB-INCONTA", href: "/brb-inconta", variant: "default", active: true },
+    { name: "GLM - CREFISACP", href: "/glm-crefisacp", variant: "default", active: false },
+    { name: "QUERO+", href: "/queromais", variant: "secondary", active: false },
+    { name: "FACTA", href: "/facta", variant: "secondary", active: false },
+    { name: "QUALIBANKING", href: "/qualibanking", variant: "default", active: false },
+    { name: "NEOCREDITO", href: "/neocredito", variant: "secondary", active: false },
+    { name: "TOTALCASH", href: "/totalcash", variant: "default", active: false },
+    { name: "2TECH", href: "/2tech", variant: "secondary", active: false },
+];
+
 
 export default function Home() {
+  const activeSystems = systems.filter(s => s.active);
+  const inactiveSystems = systems.filter(s => !s.active);
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="p-4 border-b border-border/50 shadow-sm bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -43,103 +71,36 @@ export default function Home() {
               propostas.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-6">
-            <Button asChild size="lg">
-              <Link href="/v8digital">
-                <CheckCircle className="mr-2" />
-                V8DIGITAL
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/unno">
-                <CheckCircle className="mr-2" />
-                UNNO
-              </Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/glm-crefisacp">
-                <XCircle className="mr-2" />
-                GLM - CREFISACP
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/queromais">
-                <XCircle className="mr-2" />
-                QUERO+
-              </Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/lev">
-                <CheckCircle className="mr-2" />
-                LEV (Diversos)
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/facta">
-                <XCircle className="mr-2" />
-                FACTA
-              </Link>
-            </Button>
-            {/* <Button asChild size="lg">
-              <Link href="/presencabank">PRESENÇABANK</Link>
-            </Button> */}
-            <Button asChild size="lg">
-              <Link href="/qualibanking">
-                <XCircle className="mr-2" />
-                QUALIBANKING
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/pan">
-                <CheckCircle className="mr-2" />
-                PAN
-              </Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/brb-inconta">
-                <CheckCircle className="mr-2" />
-                BRB-INCONTA
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/neocredito">
-                <XCircle className="mr-2" />
-                NEOCREDITO
-              </Link>
-            </Button>
-            {/* <Button asChild size="lg" variant="secondary">
-              <Link href="/prata-digital">PRATA DIGITAL</Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/phtech">PHTECH</Link>
-            </Button> */}
-            <Button asChild size="lg">
-              <Link href="/totalcash">
-                <XCircle className="mr-2" />
-                TOTALCASH
-              </Link>
-            </Button>
-            {/* <Button asChild size="lg">
-              <Link href="/amigoz">AMIGOZ</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/brb-esteira">BRB ESTEIRA</Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/bmg">BMG</Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/inter">INTER</Link>
-            </Button>
-            <Button asChild size="lg">
-              <Link href="/digio">DIGIO</Link>
-            </Button> */}
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/2tech">
-                <XCircle className="mr-2" />
-                2TECH
-              </Link>
-            </Button>
+          <CardContent className="p-6 space-y-8">
+             <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4 text-center">Sistemas Ativos</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {activeSystems.map(system => (
+                        <Button asChild size="lg" key={system.name} variant={system.variant}>
+                            <Link href={system.href}>
+                                <CheckCircle className="mr-2" />
+                                {system.name}
+                            </Link>
+                        </Button>
+                    ))}
+                </div>
+            </div>
+
+            <Separator />
+            
+            <div>
+                <h3 className="text-lg font-semibold text-muted-foreground mb-4 text-center">Sistemas Pendentes</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {inactiveSystems.map(system => (
+                         <Button asChild size="lg" key={system.name} variant={system.variant}>
+                            <Link href={system.href}>
+                                <XCircle className="mr-2" />
+                                {system.name}
+                            </Link>
+                        </Button>
+                    ))}
+                </div>
+            </div>
           </CardContent>
         </Card>
       </main>
