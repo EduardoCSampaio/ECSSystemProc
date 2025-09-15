@@ -654,15 +654,14 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'BRB - INCONTA';
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
-        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
-        } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
-        }
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
         newRow['COD_PRODUTO'] = '';
 
-        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
-        
+        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
+            newRow['DSC_PRODUTO'] = 'NOVO';
+        } else {
+            newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+        }
 
         newRow['DAT_CTR_INCLUSAO'] = today;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
@@ -853,8 +852,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-    
-
-
-
