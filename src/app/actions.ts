@@ -348,6 +348,17 @@ function formatDate(value: any): string {
     return String(value);
 }
 
+/**
+ * Extracts an interest rate (e.g., "1,85%") from a string.
+ * @param text The string to search within.
+ * @returns The found interest rate or an empty string.
+ */
+function extractInterestRate(text: string): string {
+    if (!text) return '';
+    const match = text.match(/\d{1,2},\d{1,2}%/);
+    return match ? match[0] : '';
+}
+
 
 // =================================================================
 // V8DIGITAL Processing Logic
@@ -1066,7 +1077,7 @@ function processQualibanking(data: any[]): any[] {
         newRow['DSC_OBSERVACAO'] = '';
         newRow['NUM_CPF_AGENTE'] = '';
         newRow['NUM_OBJETO_ECT'] = '';
-        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = extractInterestRate(sourceRow['Nome da Tabela']);
         newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
