@@ -287,8 +287,8 @@ function processV8Digital(data: any[]): any[] {
         // Map and transform data based on V8Digital rules
         newRow['NUM_BANCO'] = 17;
         newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = String(sourceRow['NUM_PROPOSTA']);
-        newRow['NUM_CONTRATO'] = String(sourceRow['NUM_CONTRATO']);
+        newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'];
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'] || '';
@@ -367,8 +367,8 @@ function processUnno(data: any[]): any[] {
         // Map and transform data based on UNNO rules
         newRow['NUM_BANCO'] = 9209;
         newRow['NOM_BANCO'] = 'UNNO';
-        newRow['NUM_PROPOSTA'] = String(sourceRow['CCB']);
-        newRow['NUM_CONTRATO'] = String(sourceRow['CCB']); // Assuming contract number is the same as proposal for UNNO
+        newRow['NUM_PROPOSTA'] = sourceRow['CCB'];
+        newRow['NUM_CONTRATO'] = sourceRow['CCB']; // Assuming contract number is the same as proposal for UNNO
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['Tabela'] || '';
@@ -547,7 +547,7 @@ function processLev(data: any[]): any[] {
 
         // Apply generic transformations and fill missing fields
         newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
-        newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUM_PROPOSTA'];
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'];
         newRow['COD_PRODUTO'] = '';
         newRow['DSC_PRODUTO'] = sourceRow['DSC_PRODUTO'];
