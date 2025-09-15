@@ -646,6 +646,7 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
+      .filter(sourceRow => String(sourceRow['STATUS'] || '').toUpperCase() === 'PAGO')
       .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
@@ -655,15 +656,19 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'BRB - INCONTA';
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
-        newRow['COD_PRODUTO'] = '';
-
-        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
+        
+        if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
+        } else if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
             newRow['DSC_PRODUTO'] = 'NOVO';
         } else {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
             newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
         }
 
+        newRow['COD_PRODUTO'] = '';
         newRow['DAT_CTR_INCLUSAO'] = today;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
         newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['CRIACAO AF']);
