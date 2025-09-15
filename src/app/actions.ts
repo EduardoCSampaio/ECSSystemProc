@@ -170,7 +170,22 @@ const BRB_INCONTA_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 // =================================================================
 // GLM-CREFISACP Configuration
 // =================================================================
-const GLM_CREFISACP_INPUT_FIELDS = []; // TODO: Define input fields
+const GLM_CREFISACP_INPUT_FIELDS = [
+    "PROPOSTA",
+    "TABELA",
+    "STATUS_CONTRATO",
+    "CRIACAO AF",
+    "AGENTE",
+    "CPF",
+    "NOME",
+    "DATA DE NASCIMENTO",
+    "PRAZO",
+    "VALOR DE PARCELA",
+    "VALOR PRINCIPAL",
+    "VALOR LIQUIDO",
+    "STATUS DATA",
+    "TAXA MENSAL"
+];
 const GLM_CREFISACP_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 // =================================================================
@@ -702,14 +717,103 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
         
-        // Step 1: Always try to format the date from 'STATUS DATA'
-        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DATA']);
-
-        // Step 2: Clear the date if the status is not 'Pago'
         const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
-        if (!isPago) {
+        const statusDateKey = Object.keys(sourceRow).find(key => key.toUpperCase().trim() === 'STATUS DATA');
+        const statusDateValue = statusDateKey ? sourceRow[statusDateKey] : undefined;
+
+        if (isPago && statusDateValue) {
+            newRow['DAT_CREDITO'] = formatDate(statusDateValue);
+        } else {
             newRow['DAT_CREDITO'] = '';
         }
+
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = formatCurrency(sourceRow['TAXA MENSAL']);
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+        return newRow;
+    });
+}
+
+
+// =================================================================
+// GLM-CREFISACP Processing Logic
+// =================================================================
+function processGlmCrefisacp(data: any[]): any[] {
+    const today = format(new Date(), 'dd/MM/yyyy');
+
+    return data.map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+
+        // Map and transform data based on GLM rules
+        newRow['NUM_BANCO'] = 789;
+        newRow['NOM_BANCO'] = 'CREFISACP';
+        newRow['NUM_PROPOSTA'] = sourceRow['PROPOSTA'];
+        newRow['NUM_CONTRATO'] = sourceRow['PROPOSTA'];
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+
+        const tabelaUpper = String(sourceRow['TABELA'] || '').toUpperCase();
+        if (tabelaUpper.includes('NOVO')) {
+            newRow['DSC_PRODUTO'] = 'NOVO';
+        } else if (tabelaUpper.includes('REFIN')) {
+            newRow['DSC_PRODUTO'] = 'REFIN';
+        } else {
+            newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
+        }
+
+        newRow['COD_PRODUTO'] = '';
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS_CONTRATO'];
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['CRIACAO AF']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['AGENTE'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
+        newRow['NOM_CLIENTE'] = sourceRow['NOME'];
+        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DATA DE NASCIMENTO']);
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['PRAZO'];
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VALOR DE PARCELA']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR PRINCIPAL']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
+
+        const statusDateKey = Object.keys(sourceRow).find(key => key.toUpperCase().trim() === 'STATUS DATA');
+        const statusDateValue = statusDateKey ? sourceRow[statusDateKey] : undefined;
+        newRow['DAT_CREDITO'] = statusDateValue ? formatDate(statusDateValue) : '';
 
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
@@ -819,6 +923,9 @@ export async function processExcelFile(
             outputFields = BRB_INCONTA_OUTPUT_FIELDS;
             break;
         case 'GLM-CREFISACP':
+            processedData = processGlmCrefisacp(filteredData);
+            outputFields = GLM_CREFISACP_OUTPUT_FIELDS;
+            break;
         case 'QUEROMAIS':
         case 'FACTA':
         case 'PRESENCABANK':
