@@ -180,10 +180,10 @@ const GLM_CREFISACP_INPUT_FIELDS = [
     "NOME",
     "DATA DE NASCIMENTO",
     "PRAZO",
-    "VALOR DE PARCELA",
-    "VALOR PRINCIPAL",
-    "VALOR LIQUIDO",
-    "STATUS DATA",
+    "VALOR_PARCELA",
+    "VALOR_BRUTO",
+    "VALOR_LIQUIDO",
+    "DATA_INTEGRACAO",
     "TAXA MENSAL"
 ];
 const GLM_CREFISACP_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
@@ -805,16 +805,12 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
         newRow['QTD_PARCELA'] = sourceRow['PRAZO'];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VALOR DE PARCELA']);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR PRINCIPAL']);
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VALOR_PARCELA']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR_BRUTO']);
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
-
-        const statusDateKey = Object.keys(sourceRow).find(key => key.toUpperCase().trim() === 'STATUS DATA');
-        const statusDateValue = statusDateKey ? sourceRow[statusDateKey] : undefined;
-        newRow['DAT_CREDITO'] = statusDateValue ? formatDate(statusDateValue) : '';
-
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR_LIQUIDO']);
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['DATA_INTEGRACAO']);
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
