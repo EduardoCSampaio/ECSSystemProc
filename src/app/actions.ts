@@ -175,7 +175,7 @@ const GLM_CREFISACP_INPUT_FIELDS = [
     "TABELA",
     "STATUS_CONTRATO",
     "CRIACAO AF",
-    "AGENTE",
+    "USUARIO_BANCO",
     "CNPJ_CPF",
     "CLIENTE",
     "DATA DE NASCIMENTO",
@@ -815,8 +815,7 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['NOM_BANCO'] = 'CREFISACP';
         newRow['NUM_PROPOSTA'] = sourceRow['PROPOSTA'];
         newRow['NUM_CONTRATO'] = sourceRow['PROPOSTA'];
-        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
-
+        
         const tabelaUpper = String(sourceRow['TABELA'] || '').toUpperCase();
         if (tabelaUpper.includes('NOVO')) {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
@@ -825,7 +824,8 @@ function processGlmCrefisacp(data: any[]): any[] {
         } else {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
         }
-
+        
+        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
         newRow['COD_PRODUTO'] = '';
         newRow['DAT_CTR_INCLUSAO'] = today;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS_CONTRATO'];
@@ -836,10 +836,10 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow['AGENTE'];
+        newRow['NIC_CTR_USUARIO'] = sourceRow['USUARIO_BANCO'];
         newRow['COD_CPF_CLIENTE'] = sourceRow['CNPJ_CPF'];
         newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
-        newRow['DAT_NASCIMENTO'] = formatDate(sourceRow['DATA DE NASCIMENTO']);
+        newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
         newRow['NUM_PREDIO'] = '';
