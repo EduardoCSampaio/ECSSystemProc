@@ -759,7 +759,7 @@ export async function processExcelFile(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer", raw: true, cellDates: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
@@ -769,8 +769,20 @@ export async function processExcelFile(
     // Convert sheet to JSON, reading all values as is.
     const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true, defval: '' });
 
+    // Sanitize headers: trim spaces from all keys in each row object
+    const sanitizedJsonData = jsonData.map(row => {
+        const newRow: {[key: string]: any} = {};
+        for (const key in row) {
+            if (Object.prototype.hasOwnProperty.call(row, key)) {
+                newRow[key.trim()] = row[key];
+            }
+        }
+        return newRow;
+    });
+
+
     // Filter out rows that are completely empty
-    const filteredData = jsonData.filter(row => 
+    const filteredData = sanitizedJsonData.filter(row => 
         Object.values(row).some(cell => cell !== null && cell !== ''));
 
     if (filteredData.length === 0) {
