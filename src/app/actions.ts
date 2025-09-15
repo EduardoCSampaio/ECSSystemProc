@@ -515,9 +515,16 @@ function processPan(data: any[]): any[] {
 // =================================================================
 function processLev(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
+    
+    const requiredBanks = ["OLE", "DAYCOVAL", "CREFAZ", "MASTER"];
 
     return data
-      .filter(sourceRow => sourceRow['NUM_PROPOSTA'] && String(sourceRow['NUM_PROPOSTA']).trim() !== '')
+      .filter(sourceRow => {
+            const nomBanco = String(sourceRow['NOM_BANCO'] || '').toUpperCase();
+            const hasRequiredBank = requiredBanks.some(bank => nomBanco.includes(bank));
+            const hasProposal = sourceRow['NUM_PROPOSTA'] && String(sourceRow['NUM_PROPOSTA']).trim() !== '';
+            return hasRequiredBank && hasProposal;
+      })
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
