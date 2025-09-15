@@ -646,7 +646,7 @@ function processBrbInconta(data: any[]): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase() !== 'LV')
+      .filter(sourceRow => String(sourceRow['AGENTE'] || '').toUpperCase().trim() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
@@ -656,16 +656,12 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        const isPago = String(sourceRow['STATUS'] || '').toUpperCase() === 'PAGO';
+        const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
 
-        if (String(sourceRow['PRODUTO'] || '').toUpperCase() === 'CONTRATO NOVO') {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
-        } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
-        }
-        
-        if (String(sourceRow['TABELA'] || '').toUpperCase().includes('REFIN PORT')) {
-            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+
+        if (String(sourceRow['PRODUTO'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
+            newRow['DSC_PRODUTO'] = 'NOVO';
         } else {
             newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
         }
