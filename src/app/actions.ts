@@ -160,7 +160,7 @@ const BRB_INCONTA_INPUT_FIELDS = [
   "VALOR DE PARCELA",
   "VALOR PRINCIPAL",
   "VALOR LIQUIDO",
-  "STATUS DA DATA",
+  "STATUS DATA",
   "TAXA MENSAL",
 ];
 
@@ -702,8 +702,8 @@ function processBrbInconta(data: any[]): any[] {
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
         
-        // Step 1: Always try to format the date from 'STATUS DA DATA'
-        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DA DATA']);
+        // Step 1: Always try to format the date from 'STATUS DATA'
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['STATUS DATA']);
 
         // Step 2: Clear the date if the status is not 'Pago'
         const isPago = String(sourceRow['STATUS'] || '').toUpperCase().trim() === 'PAGO';
