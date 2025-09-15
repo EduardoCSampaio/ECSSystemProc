@@ -158,7 +158,7 @@ type System = "V8DIGITAL" | "UNNO" | "GLM-CREFISACP" | "QUEROMAIS" | "LEV" | "FA
 
 /**
  * Formats a value into a Brazilian currency string (BRL).
- * It correctly handles numbers and strings with pt-BR formatting (e.g., "1.234,56").
+ * It correctly handles both pt-BR format (e.g., "1.234,56") and US/generic format (e.g., "1,234.56").
  * @param value The value to format.
  * @returns A string in BRL currency format (e.g., "1.234,56") or the original value if parsing fails.
  */
@@ -169,15 +169,17 @@ function formatCurrency(value: any): string {
 
     let sValue = String(value).trim();
     
-    // Check if the string contains a comma, which suggests it's already in a pt-BR-like format.
-    const hasComma = sValue.includes(',');
+    // Check if the last separator is a comma, suggesting pt-BR format ("1.234,56")
+    const lastCommaIndex = sValue.lastIndexOf(',');
+    const lastDotIndex = sValue.lastIndexOf('.');
 
-    if (hasComma) {
-      // It's likely pt-BR format ("1.234,56"), so remove thousand separators (.) and replace decimal comma (,)
+    if (lastCommaIndex > lastDotIndex) {
+      // pt-BR format: "1.234,56" -> "1234.56"
       sValue = sValue.replace(/\./g, '').replace(',', '.');
+    } else {
+      // US/generic format: "1,234.56" -> "1234.56"
+      sValue = sValue.replace(/,/g, '');
     }
-    // If it has no comma but has a dot, it's likely US format ("1234.56").
-    // We don't need to do anything in this case, as parseFloat handles it.
 
     const num = parseFloat(sValue);
     
