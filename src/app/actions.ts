@@ -1005,7 +1005,17 @@ function processQualibanking(data: any[]): any[] {
         newRow['NUM_CONTRATO'] = sourceRow['Número do Contrato'];
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['Nome da Tabela'];
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow['Tipo de Operação'];
+        
+        // Conditional logic for "Tipo de Operação"
+        let tipoOperacao = String(sourceRow['Tipo de Operação'] || '').trim();
+        if (tipoOperacao.toUpperCase() === 'REFIN DA PORTABILIDADE') {
+            newRow['DSC_PRODUTO'] = 'PORTAB/REFIN';
+        } else if (tipoOperacao.toUpperCase() === 'PORTABILIDADE + REFIN') {
+            newRow['DSC_PRODUTO'] = 'PORTABILIDADE';
+        } else {
+            newRow['DSC_PRODUTO'] = tipoOperacao;
+        }
+
         newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['Status'];
         newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['Data da Proposta']);
@@ -1034,7 +1044,14 @@ function processQualibanking(data: any[]): any[] {
         newRow['NUM_BENEFICIO'] = '';
         newRow['QTD_PARCELA'] = sourceRow['Prazo'];
         newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['Valor da Parcela']);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['Valor do Empréstimo']);
+
+        // Conditional logic for "Valor do Empréstimo"
+        if (newRow['DSC_PRODUTO'] === 'PORTABILIDADE') {
+            newRow['VAL_BRUTO'] = formatCurrency('0');
+        } else {
+            newRow['VAL_BRUTO'] = formatCurrency(sourceRow['Valor do Empréstimo']);
+        }
+        
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
         newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['Valor Líquido ao Cliente']);
