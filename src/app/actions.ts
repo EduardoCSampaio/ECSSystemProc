@@ -1,5 +1,6 @@
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -165,7 +166,7 @@ const BRB_INCONTA_INPUT_FIELDS = [
   "TAXA MENSAL",
 ];
 
-const BRB_INCONTA_OUTPUT_FIELDS = V8DIGital_OUTPUT_FIELDS;
+const BRB_INCONTA_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 
 // =================================================================
@@ -1123,8 +1124,8 @@ function processNeocredito(data: any[]): any[] {
   return data.map(sourceRow => {
     const newRow: { [key: string]: any } = {};
 
-    newRow['NUM_BANCO'] = 22;
-    newRow['NOM_BANCO'] = 'QUALIBANKING';
+    newRow['NUM_BANCO'] = 410;
+    newRow['NOM_BANCO'] = 'NEOCREDITO';
     newRow['NUM_PROPOSTA'] = sourceRow['PROPOSTA'];
     newRow['NUM_CONTRATO'] = sourceRow['PROPOSTA'];
 
@@ -1358,3 +1359,4 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
