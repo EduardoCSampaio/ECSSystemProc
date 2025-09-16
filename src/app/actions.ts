@@ -22,8 +22,8 @@ const normalizeHeader = (str: string): string => {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remove accent marks
     .toUpperCase()
-    .replace(/[^A-Z0-9\s]/g, '') // Remove non-alphanumeric characters except space
-    .replace(/\s+/g, '_'); // Replace one or more spaces with a single underscore
+    // .replace(/[^A-Z0-9_]/g, "") // Keep underscores
+    .replace(/[^A-Z0-9_]+/g, '_'); // Replace non-alphanumeric (except _) with single underscore
 };
 
 /**
@@ -34,9 +34,21 @@ const normalizeHeader = (str: string): string => {
 const createHeaderMap = (actualHeaders: string[]): Record<string, string> => {
   const map: Record<string, string> = {};
   for (const header of actualHeaders) {
-    const normalized = normalizeHeader(header);
-    if (normalized) {
-        map[normalized] = header;
+    const originalHeaderStr = String(header || '').trim();
+    if (!originalHeaderStr) continue;
+    
+    // Normalize our own input fields list
+    const normalized = String(header || '')
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove accent marks
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_') // Replace non-alphanumeric chars with _
+        .replace(/_$/, '') // Remove trailing underscore
+        .replace(/^_+/, ''); // Remove leading underscore
+    
+    if (normalized && !map[normalized]) { // Avoid overwriting if multiple headers normalize to the same key
+        map[normalized] = originalHeaderStr;
     }
   }
   return map;
@@ -1559,10 +1571,10 @@ export async function processExcelFile(
     if (headerRowIndex === -1) {
         throw new Error("Could not find a valid header row in the Excel file.");
     }
-    const originalHeaders: string[] = rawData[headerRowIndex].map(String);
+    const originalHeaders: string[] = rawData[headerRowIndex].map(h => String(h || '').trim());
 
     // Convert sheet to JSON array of objects, starting from the row AFTER the header
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex, raw: true, defval: '' });
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { header: originalHeaders, range: headerRowIndex + 1, defval: '' });
 
     if (jsonData.length === 0) {
         throw new Error("No data rows found in the Excel sheet.");
