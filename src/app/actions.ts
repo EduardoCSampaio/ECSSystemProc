@@ -4,6 +4,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -1244,10 +1245,19 @@ function process2Tech(data: any[]): any[] {
     return data.map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
+        // Helper to remove leading apostrophe
+        const cleanString = (value: any): string => {
+            let str = String(value || '').trim();
+            if (str.startsWith("'")) {
+                return str.substring(1);
+            }
+            return str;
+        };
+
         newRow['NUM_BANCO'] = 789;
         newRow['NOM_BANCO'] = 'CREFISACP';
-        newRow['NUM_PROPOSTA'] = sourceRow['NUMERO_ADE'];
-        newRow['NUM_CONTRATO'] = sourceRow['NUMERO_ADE'];
+        newRow['NUM_PROPOSTA'] = cleanString(sourceRow['NUMERO_ADE']);
+        newRow['NUM_CONTRATO'] = cleanString(sourceRow['NUMERO_ADE']);
 
         const tipoContrato = String(sourceRow['TIPO CONTRATO'] || '').trim();
         if (tipoContrato === '001 - Novo Contrato') {
@@ -1275,7 +1285,7 @@ function process2Tech(data: any[]): any[] {
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow['LOGIN_SUB_USUARIO'];
+        newRow['NIC_CTR_USUARIO'] = cleanString(sourceRow['LOGIN_SUB_USUARIO']);
         newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
         newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
@@ -1479,6 +1489,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
 
 
