@@ -56,7 +56,7 @@ A interface é projetada para ser simples e direta.
 5.  **Download:** Se o processamento for bem-sucedido, um botão de download aparecerá. Clique nele para baixar o arquivo `WORKBANK` padronizado. Em caso de erro, uma mensagem descritiva será exibida.
 6.  **Dashboard:** Acesse o `Dashboard` pela página inicial para visualizar o histórico de todos os arquivos processados, com filtros por data.
 
-## 뱅크 Status dos Sistemas
+## 🛠️ Status dos Sistemas
 
 | Sistema         | Status          | Implementado em `actions.ts`? |
 | ----------------- | --------------- | ----------------------------- |
@@ -65,11 +65,11 @@ A interface é projetada para ser simples e direta.
 | **PAN**           | ✅ Ativo         | Sim                           |
 | **LEV**           | ✅ Ativo         | Sim                           |
 | **BRB-INCONTA**   | ✅ Ativo         | Sim                           |
-| GLM - CREFISACP   | ❌ Inativo       | Não (Usa lógica genérica)     |
-| QUERO+            | ❌ Inativo       | Não (Usa lógica genérica)     |
+| **GLM-CREFISACP** | ✅ Ativo         | Sim                           |
+| **QUERO+**        | ✅ Ativo         | Sim                           |
+| **QUALIBANKING**  | ✅ Ativo         | Sim                           |
+| **NEOCREDITO**    | ✅ Ativo         | Sim                           |
 | FACTA             | ❌ Inativo       | Não (Usa lógica genérica)     |
-| QUALIBANKING      | ❌ Inativo       | Não (Usa lógica genérica)     |
-| NEOCREDITO        | ❌ Inativo       | Não (Usa lógica genérica)     |
 | TOTALCASH         | ❌ Inativo       | Não (Usa lógica genérica)     |
 | 2TECH             | ❌ Inativo       | Não (Usa lógica genérica)     |
 
@@ -92,7 +92,7 @@ Para adicionar a lógica de um novo sistema (ex: "FACTA"), siga os passos abaixo
       return data.map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         // Mapeamento e lógica aqui
-        newRow['NUM_BANCO'] = 1234; // Exemplo
+        newRow['NUM_BANCO'] = 123;
         newRow['NOM_BANCO'] = 'FACTA';
         newRow['NUM_PROPOSTA'] = sourceRow['ColunaExemplo1'];
         newRow['VAL_BRUTO'] = formatCurrency(sourceRow['Valor Total']);
