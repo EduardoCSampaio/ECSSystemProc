@@ -1419,10 +1419,10 @@ function processFacta(data: any[], headerMap: Record<string, string>): any[] {
         newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'COD');
         newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'COD');
         
-        const tipoProduto = String(getRowValue(sourceRow, headerMap, 'TIPO_PRODUTO') || '').trim().toUpperCase();
-        if (tipoProduto === 'REFIN / PORT') {
+        const tipoProduto = String(getRowValue(sourceRow, headerMap, 'TIPO_PRODUTO') || '').trim();
+        if (tipoProduto.toUpperCase() === 'REFIN / PORT') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
-        } else if (tipoProduto === 'CARTÃO BENEFÍCIO') {
+        } else if (tipoProduto.toUpperCase() === 'CARTÃO BENEFÍCIO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'CARTÃO';
         } else {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = tipoProduto;
@@ -1442,7 +1442,7 @@ function processFacta(data: any[], headerMap: Record<string, string>): any[] {
         
         let digitador = String(getRowValue(sourceRow, headerMap, 'COD_DIGITADOR_NO_BANCO') || '');
         if (digitador.toUpperCase().startsWith('SUB ')) {
-            newRow['NIC_CTR_USUARIO'] = digitador.substring(4);
+            newRow['NIC_CTR_USUARIO'] = digitador.substring(4).trim();
         } else {
             newRow['NIC_CTR_USUARIO'] = digitador;
         }
