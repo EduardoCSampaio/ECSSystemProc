@@ -174,7 +174,7 @@ const GLM_CREFISACP_INPUT_FIELDS = [
     "PROPOSTA",
     "TABELA",
     "STATUS_CONTRATO",
-    "CRIACAO AF",
+    "DATA_CADASTRO",
     "USUARIO_BANCO",
     "CNPJ_CPF",
     "CLIENTE",
@@ -829,7 +829,7 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['COD_PRODUTO'] = '';
         newRow['DAT_CTR_INCLUSAO'] = today;
         newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS_CONTRATO'];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['CRIACAO AF']);
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DATA_CADASTRO']);
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
@@ -1244,4 +1244,5 @@ export async function processExcelFile(
     
 
     
+
 
