@@ -483,6 +483,10 @@ function extractInterestRate(text: string): string {
 // =================================================================
 function processV8Digital(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
+
+    if (!headerMap['NUM_PROPOSTA']) {
+        throw new Error("A coluna 'NUM_PROPOSTA' é obrigatória mas não foi encontrada na planilha. Verifique o nome da coluna e tente novamente.");
+    }
     
     return data
       .filter(sourceRow => getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA') && String(getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA')).trim() !== '')
