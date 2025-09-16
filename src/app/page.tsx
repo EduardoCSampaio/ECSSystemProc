@@ -29,8 +29,8 @@ const systems: System[] = [
     { name: "GLM - CREFISACP", href: "/glm-crefisacp", variant: "default", active: true },
     { name: "QUERO+", href: "/queromais", variant: "secondary", active: true },
     { name: "QUALIBANKING", href: "/qualibanking", variant: "default", active: true },
+    { name: "NEOCREDITO", href: "/neocredito", variant: "secondary", active: true },
     { name: "FACTA", href: "/facta", variant: "secondary", active: false },
-    { name: "NEOCREDITO", href: "/neocredito", variant: "secondary", active: false },
     { name: "TOTALCASH", href: "/totalcash", variant: "default", active: false },
     { name: "2TECH", href: "/2tech", variant: "secondary", active: false },
 ];
