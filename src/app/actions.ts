@@ -1,3 +1,4 @@
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -332,6 +333,7 @@ const FACTA_INPUT_FIELDS = [
     "COD",
     "TIPO PRODUTO",
     "PRODUTO",
+    "CONVENIO",
     "STATUS",
     "DATA",
     "COD DIGITADOR NO BANCO",
@@ -1461,7 +1463,14 @@ function processFacta(data: any[], headerMap: Record<string, string>): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTDE_PARCELAS');
+        
+        const convenio = String(getRowValue(sourceRow, headerMap, 'CONVENIO') || '').toUpperCase();
+        if (convenio.includes('FGTS')) {
+            newRow['QTD_PARCELA'] = 10;
+        } else {
+            newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTDE_PARCELAS');
+        }
+
         newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_PARCELA'));
         newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
