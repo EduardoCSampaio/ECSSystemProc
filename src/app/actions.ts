@@ -3,6 +3,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -48,6 +49,7 @@ const V8DIGITAL_OUTPUT_FIELDS = [
     "NOM_ORGAO",
     "COD_PRODUTOR_VENDA",
     "NOM_PRODUTOR_VENDA",
+
     "NIC_CTR_USUARIO",
     "COD_CPF_CLIENTE",
     "NOM_CLIENTE",
@@ -254,6 +256,29 @@ const NEOCREDITO_INPUT_FIELDS = [
   "DATA INTEGRADO",
 ];
 const NEOCREDITO_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
+
+// =================================================================
+// 2TECH Configuration
+// =================================================================
+const TECH2_INPUT_FIELDS = [
+    "NUMERO_ADE",
+    "TIPO CONTRATO",
+    "SIT_BANCO",
+    "SIT_PAGAMENTO_CLIENTE",
+    "DATA_DIGIT_BANCO",
+    "LOGIN_SUB_USUARIO",
+    "CPF",
+    "CLIENTE",
+    "PRAZO",
+    "VLR_PARC",
+    "VALOR_BRUTO",
+    "VALOR_LIQUIDO",
+    "DATA_PAGAMENTO_CLIENTE",
+    "CONVENIO",
+    "TABELA"
+];
+const TECH2_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 
 // =================================================================
@@ -1211,6 +1236,96 @@ function processNeocredito(data: any[]): any[] {
 
 
 // =================================================================
+// 2TECH Processing Logic
+// =================================================================
+function process2Tech(data: any[]): any[] {
+    const today = format(new Date(), 'dd/MM/yyyy');
+
+    return data.map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+
+        newRow['NUM_BANCO'] = 789;
+        newRow['NOM_BANCO'] = 'CREFISACP';
+        newRow['NUM_PROPOSTA'] = sourceRow['NUMERO_ADE'];
+        newRow['NUM_CONTRATO'] = sourceRow['NUMERO_ADE'];
+
+        const tipoContrato = String(sourceRow['TIPO CONTRATO'] || '').trim();
+        if (tipoContrato === '001 - Novo Contrato') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
+        } else if (tipoContrato === '027 - Refinanciamento') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'REFINANCIAMENTO';
+        } else {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = tipoContrato;
+        }
+
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = `${sourceRow['CONVENIO'] || ''}-${sourceRow['TABELA'] || ''}`;
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        
+        if (String(sourceRow['SIT_PAGAMENTO_CLIENTE'] || '').toUpperCase().trim() === 'PAGO AO CLIENTE') {
+            newRow['DSC_SITUACAO_EMPRESTIMO'] = 'PAGO AO CLIENTE';
+        } else {
+            newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['SIT_BANCO'];
+        }
+        
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DATA_DIGIT_BANCO']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        newRow['NIC_CTR_USUARIO'] = sourceRow['LOGIN_SUB_USUARIO'];
+        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
+        newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
+        newRow['DAT_NASCIMENTO'] = '01/01/1990';
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['PRAZO'];
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VLR_PARC']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR_BRUTO']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR_LIQUIDO']);
+        newRow['DAT_CREDITO'] = formatDate(sourceRow['DATA_PAGAMENTO_CLIENTE']);
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+
+        return newRow;
+    });
+}
+
+
+// =================================================================
 // Placeholder Processing Logic for new systems
 // =================================================================
 function processGeneric(data: any[], system: string): any[] {
@@ -1308,6 +1423,10 @@ export async function processExcelFile(
             processedData = processNeocredito(filteredData);
             outputFields = NEOCREDITO_OUTPUT_FIELDS;
             break;
+        case '2TECH':
+            processedData = process2Tech(filteredData);
+            outputFields = TECH2_OUTPUT_FIELDS;
+            break;
         case 'FACTA':
         case 'PRESENCABANK':
         case 'PRATA DIGITAL':
@@ -1318,7 +1437,6 @@ export async function processExcelFile(
         case 'BMG':
         case 'INTER':
         case 'DIGIO':
-        case '2TECH':
             processedData = processGeneric(filteredData, system);
             outputFields = GENERIC_OUTPUT_FIELDS;
             break;
@@ -1361,6 +1479,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
 
 
