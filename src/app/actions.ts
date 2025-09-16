@@ -6,6 +6,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -434,6 +435,27 @@ function extractInterestRate(text: string): string {
     return match ? match[0] : '';
 }
 
+/**
+ * Finds a key in a row object by a partial, case-insensitive match.
+ * @param row The row object.
+ * @param partialKey The partial key to search for.
+ * @returns The first matching key, or undefined.
+ */
+function findKeyByPartial(row: object, partialKey: string): string | undefined {
+    const lowerPartialKey = partialKey.toLowerCase();
+    return Object.keys(row).find(key => key.toLowerCase().trim().includes(lowerPartialKey));
+}
+
+/**
+ * Gets a value from a row object using a flexible key search.
+ * @param row The row object.
+ * @param key The key or partial key to look for.
+ * @returns The value, or an empty string if not found.
+ */
+function getFlexibleValue(row: { [key: string]: any }, key: string): any {
+    const foundKey = findKeyByPartial(row, key);
+    return foundKey ? row[foundKey] : '';
+}
 
 // =================================================================
 // V8DIGITAL Processing Logic
@@ -795,12 +817,12 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
 
-        if (String(sourceRow['TABELA'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
+        if (String(sourceRow['PRODUTO'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['PRODUTO'];
         }
 
         newRow['COD_PRODUTO'] = '';
@@ -1368,10 +1390,10 @@ function processFacta(data: any[]): any[] {
         
         newRow['NUM_BANCO'] = 897;
         newRow['NOM_BANCO'] = 'FACTA';
-        newRow['NUM_PROPOSTA'] = sourceRow['COD'];
-        newRow['NUM_CONTRATO'] = sourceRow['COD'];
+        newRow['NUM_PROPOSTA'] = getFlexibleValue(sourceRow, 'COD');
+        newRow['NUM_CONTRATO'] = getFlexibleValue(sourceRow, 'COD');
         
-        const tipoProduto = String(sourceRow['TIPO PRODUTO'] || '').trim().toUpperCase();
+        const tipoProduto = String(getFlexibleValue(sourceRow, 'TIPO PRODUTO')).trim().toUpperCase();
         if (tipoProduto === 'REFIN / PORT') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
         } else if (tipoProduto === 'CARTÃO BENEFÍCIO') {
@@ -1381,10 +1403,10 @@ function processFacta(data: any[]): any[] {
         }
 
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+        newRow['DSC_PRODUTO'] = getFlexibleValue(sourceRow, 'PRODUTO');
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DATA']);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getFlexibleValue(sourceRow, 'STATUS');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getFlexibleValue(sourceRow, 'DATA'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
@@ -1392,15 +1414,15 @@ function processFacta(data: any[]): any[] {
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
         
-        let digitador = String(sourceRow['COD DIGITADOR NO BANCO'] || '');
+        let digitador = String(getFlexibleValue(sourceRow, 'COD DIGITADOR NO BANCO'));
         if (digitador.toUpperCase().startsWith('SUB ')) {
             newRow['NIC_CTR_USUARIO'] = digitador.substring(4);
         } else {
             newRow['NIC_CTR_USUARIO'] = digitador;
         }
         
-        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
-        newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
+        newRow['COD_CPF_CLIENTE'] = getFlexibleValue(sourceRow, 'CPF');
+        newRow['NOM_CLIENTE'] = getFlexibleValue(sourceRow, 'CLIENTE');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -1415,14 +1437,14 @@ function processFacta(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow['QTDE PARCELAS'];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VALOR PARCELA']);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR BRUTO']);
+        newRow['QTD_PARCELA'] = getFlexibleValue(sourceRow, 'QTDE PARCELAS');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getFlexibleValue(sourceRow, 'VALOR PARCELA'));
+        newRow['VAL_BRUTO'] = formatCurrency(getFlexibleValue(sourceRow, 'VALOR BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getFlexibleValue(sourceRow, 'VALOR LIQUIDO'));
 
-        let dataAverbacao = formatDate(sourceRow['DATA AVERBACAO']);
+        let dataAverbacao = formatDate(getFlexibleValue(sourceRow, 'DATA AVERBACAO'));
         if (dataAverbacao === '00/00/0000') {
             newRow['DAT_CREDITO'] = '';
         } else {
@@ -1612,6 +1634,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
 
 
