@@ -532,7 +532,7 @@ function processPan(data: any[]): any[] {
         const newRow: { [key: string]: any } = {};
 
         // Map and transform data based on PAN rules
-        newRow['NUM_BANCO'] = sourceRow['NUM_BAN'];
+        newRow['NUM_BANCO'] = 623;
         newRow['NOM_BANCO'] = sourceRow['NOM_BANCO'];
         newRow['NUM_PROPOSTA'] = sourceRow['NUM_PROPOSTA'];
         newRow['NUM_CONTRATO'] = sourceRow['NUM_CONTRATO'];
@@ -1244,3 +1244,4 @@ export async function processExcelFile(
     
 
     
+
