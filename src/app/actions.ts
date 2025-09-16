@@ -1,6 +1,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -1141,7 +1142,7 @@ function processNeocredito(data: any[]): any[] {
     }
 
     newRow['COD_PRODUTO'] = '';
-    newRow['DSC_PRODUTO'] = `${sourceRow['CONVENIO'] || ''} - ${sourceRow['TABELA'] || ''}`;
+    newRow['DSC_PRODUTO'] = `${sourceRow['CONVENIO'] || ''}-${sourceRow['TABELA'] || ''}`;
     newRow['DAT_CTR_INCLUSAO'] = today;
     newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
     newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DATA CADASTRO']);
@@ -1359,4 +1360,5 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
