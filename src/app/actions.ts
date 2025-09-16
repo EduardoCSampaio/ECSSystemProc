@@ -2,6 +2,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -746,12 +747,12 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
+        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
 
         if (String(sourceRow['PRODUTO'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
-            newRow['DSC_PRODUTO'] = 'NOVO';
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else {
-            newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['PRODUTO'];
         }
 
         newRow['COD_PRODUTO'] = '';
@@ -1360,5 +1361,6 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
 
