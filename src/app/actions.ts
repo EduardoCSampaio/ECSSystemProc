@@ -485,7 +485,14 @@ function processV8Digital(data: any[], headerMap: Record<string, string>): any[]
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA') && String(getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA')).trim() !== '')
+      .filter(sourceRow => {
+            const numProposta = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+            const numContrato = getRowValue(sourceRow, headerMap, 'NUM_CONTRATO');
+            const cpfCliente = getRowValue(sourceRow, headerMap, 'COD_CPF_CLIENTE');
+            return (numProposta && String(numProposta).trim() !== '') ||
+                   (numContrato && String(numContrato).trim() !== '') ||
+                   (cpfCliente && String(cpfCliente).trim() !== '');
+      })
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         
@@ -1420,9 +1427,9 @@ function processFacta(data: any[], headerMap: Record<string, string>): any[] {
         newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'COD');
         
         const tipoProduto = String(getRowValue(sourceRow, headerMap, 'TIPO_PRODUTO') || '').trim();
-        if (tipoProduto.toUpperCase() === 'REFIN / PORT') {
+        if (tipoProduto === 'REFIN / PORT') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
-        } else if (tipoProduto.toUpperCase() === 'CARTÃO BENEFÍCIO') {
+        } else if (tipoProduto === 'Cartão Benefício') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'CARTÃO';
         } else {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = tipoProduto;
