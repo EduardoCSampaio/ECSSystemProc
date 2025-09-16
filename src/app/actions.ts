@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 "use server";
 
 import * as XLSX from "xlsx";
@@ -19,26 +8,50 @@ import { format, subMonths, isAfter, parse } from "date-fns";
 // =================================================================
 
 /**
- * Normalizes a string by converting to uppercase, removing accents, and stripping all spaces.
- * e.g., "Data de Nascimento" -> "DATADENASCIMENTO"
+ * Normalizes a header string for consistent lookup.
+ * Converts to uppercase, removes accents, and replaces non-alphanumeric characters (except spaces) with underscores.
+ * e.g., "Data de Nascimento" -> "DATA_DE_NASCIMENTO"
  * @param str The string to normalize.
  * @returns The normalized string.
  */
-const normalizeHeader = (str: string) => {
-    return str
-        .normalize("NFD") // Decompose accented characters
-        .replace(/[\u0300-\u036f]/g, "") // Remove accent marks
-        .replace(/[^a-zA-Z0-9]/g, '') // Remove non-alphanumeric characters
-        .toUpperCase();
+const normalizeHeader = (str: string): string => {
+  if (!str) return '';
+  return str
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accent marks
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, '') // Remove non-alphanumeric characters except space
+    .replace(/\s+/g, '_'); // Replace one or more spaces with a single underscore
 };
 
+/**
+ * Creates a map from normalized header names to their original names from the sheet.
+ * @param actualHeaders The array of original header names from the worksheet.
+ * @returns A record mapping normalized names to original names. e.g., { 'DATA_NASCIMENTO': 'Data Nascimento' }
+ */
 const createHeaderMap = (actualHeaders: string[]): Record<string, string> => {
-    const map: Record<string, string> = {};
-    for (const header of actualHeaders) {
-        map[normalizeHeader(header)] = header;
+  const map: Record<string, string> = {};
+  for (const header of actualHeaders) {
+    const normalized = normalizeHeader(header);
+    if (normalized) {
+        map[normalized] = header;
     }
-    return map;
+  }
+  return map;
 };
+
+/**
+ * Gets a value from a data row using the header map, providing robust lookup.
+ * @param row The raw data row object.
+ * @param headerMap The map created by createHeaderMap.
+ * @param normalizedField The normalized field name to look for (e.g., 'NUM_PROPOSTA').
+ * @returns The value from the row, or undefined if not found.
+ */
+const getRowValue = (row: any, headerMap: Record<string, string>, normalizedField: string): any => {
+    const originalHeader = headerMap[normalizedField];
+    return originalHeader ? row[originalHeader] : undefined;
+}
 
 // =================================================================
 // V8DIGITAL Configuration
@@ -466,35 +479,35 @@ function extractInterestRate(text: string): string {
 // =================================================================
 // V8DIGITAL Processing Logic
 // =================================================================
-function processV8Digital(data: any[]): any[] {
+function processV8Digital(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
     
     return data
-      .filter(sourceRow => sourceRow[normalizeHeader('NUM_PROPOSTA')] && String(sourceRow[normalizeHeader('NUM_PROPOSTA')]).trim() !== '')
+      .filter(sourceRow => getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA') && String(getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA')).trim() !== '')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         
         // Map and transform data based on V8Digital rules
         newRow['NUM_BANCO'] = 17;
         newRow['NOM_BANCO'] = 'V8DIGITAL';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('NUM_CONTRATO')];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_TIPO_PROPOSTA_EMPRESTIMO')] === 'Margem Livre (Novo)' ? 'NOVO' : sourceRow[normalizeHeader('DSC_TIPO_PROPOSTA_EMPRESTIMO')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'NUM_CONTRATO');
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_TIPO_PROPOSTA_EMPRESTIMO') === 'Margem Livre (Novo)' ? 'NOVO' : getRowValue(sourceRow, headerMap, 'DSC_TIPO_PROPOSTA_EMPRESTIMO');
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('DSC_PRODUTO')] || '';
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'DSC_PRODUTO') || '';
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_SITUACAO_EMPRESTIMO')] || '';
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DAT_EMPRESTIMO')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_SITUACAO_EMPRESTIMO') || '';
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_EMPRESTIMO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('NIC_CTR_USUARIO')] || '';
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('COD_CPF_CLIENTE')] || '';
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOM_CLIENTE')] || '';
-        let datNasc = formatDate(sourceRow[normalizeHeader('DAT_NASCIMENTO')]);
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'NIC_CTR_USUARIO') || '';
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'COD_CPF_CLIENTE') || '';
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOM_CLIENTE') || '';
+        let datNasc = formatDate(getRowValue(sourceRow, headerMap, 'DAT_NASCIMENTO'));
         if (!datNasc || datNasc === '00/00/0000' || datNasc.endsWith('1899')) {
             datNasc = '01/01/1990';
         }
@@ -512,13 +525,13 @@ function processV8Digital(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('QTD_PARCELA')] || '';
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VAL_PRESTACAO')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VAL_BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTD_PARCELA') || '';
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_PRESTACAO'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VAL_LIQUIDO')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DAT_CREDITO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_CREDITO'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -530,7 +543,7 @@ function processV8Digital(data: any[]): any[] {
         newRow['NUM_CPF_AGENTE'] = '';
         newRow['NUM_OBJETO_ECT'] = '';
         newRow['PCL_TAXA_EMPRESTIMO'] = '1,80';
-        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_TIPO_FORMULARIO_EMPRESTIMO')] || '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_TIPO_FORMULARIO_EMPRESTIMO') || '';
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
         newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
@@ -546,35 +559,35 @@ function processV8Digital(data: any[]): any[] {
 // =================================================================
 // UNNO Processing Logic
 // =================================================================
-function processUnno(data: any[]): any[] {
+function processUnno(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => sourceRow[normalizeHeader('CCB')] && String(sourceRow[normalizeHeader('CCB')]).trim() !== '')
+      .filter(sourceRow => getRowValue(sourceRow, headerMap, 'CCB') && String(getRowValue(sourceRow, headerMap, 'CCB')).trim() !== '')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
         // Map and transform data based on UNNO rules
         newRow['NUM_BANCO'] = 9209;
         newRow['NOM_BANCO'] = 'UNNO';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('CCB')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('CCB')]; // Assuming contract number is the same as proposal for UNNO
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'CCB');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'CCB'); // Assuming contract number is the same as proposal for UNNO
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('Tabela')] || '';
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'TABELA') || '';
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('Status')] || '';
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('Data de Digitação')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS') || '';
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DE_DIGITACAO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('E-mail')] || '';
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF/CNPJ')] || '';
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('Nome')] || '';
-        let datNasc = formatDate(sourceRow[normalizeHeader('Data Nascimento')]);
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'E_MAIL') || '';
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF_CNPJ') || '';
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOME') || '';
+        let datNasc = formatDate(getRowValue(sourceRow, headerMap, 'DATA_NASCIMENTO'));
         if (!datNasc || datNasc === '00/00/0000' || datNasc.endsWith('1899')) {
             datNasc = '01/01/1990';
         }
@@ -592,13 +605,13 @@ function processUnno(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('Parcelas')] || '';
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PARCELAS') || '';
         newRow['VAL_PRESTACAO'] = ''; // Empty as requested
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('Valor Bruto')]);
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('Valor Líquido')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('Data do Desembolso')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DO_DESEMBOLSO'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -626,35 +639,35 @@ function processUnno(data: any[]): any[] {
 // =================================================================
 // PAN Processing Logic
 // =================================================================
-function processPan(data: any[]): any[] {
+function processPan(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => sourceRow[normalizeHeader('NUM_PROPOSTA')] && String(sourceRow[normalizeHeader('NUM_PROPOSTA')]).trim() !== '')
+      .filter(sourceRow => getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA') && String(getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA')).trim() !== '')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
         // Map and transform data based on PAN rules
         newRow['NUM_BANCO'] = 623;
-        newRow['NOM_BANCO'] = sourceRow[normalizeHeader('NOM_BANCO')];
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('NUM_CONTRATO')];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_TIPO_PROPOSTA_EMPRESTIMO')];
+        newRow['NOM_BANCO'] = getRowValue(sourceRow, headerMap, 'NOM_BANCO');
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'NUM_CONTRATO');
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_TIPO_PROPOSTA_EMPRESTIMO');
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('DSC_PRODUTO')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'DSC_PRODUTO');
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_SITUACAO_EMPRESTIMO')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DAT_EMPRESTIMO')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_SITUACAO_EMPRESTIMO');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_EMPRESTIMO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('NIC_CTR_USUARIO')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('COD_CPF_CLIENTE')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOM_CLIENTE')];
-        let datNasc = formatDate(sourceRow[normalizeHeader('DAT_NASCIMENTO')]);
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'NIC_CTR_USUARIO');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'COD_CPF_CLIENTE');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOM_CLIENTE');
+        let datNasc = formatDate(getRowValue(sourceRow, headerMap, 'DAT_NASCIMENTO'));
         if (!datNasc) {
             datNasc = '01/01/1990';
         }
@@ -672,13 +685,13 @@ function processPan(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('QTD_PARCELA')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VAL_PRESTACAO')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VAL_BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTD_PARCELA');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_PRESTACAO'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VAL_LIQUIDO')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DAT_CREDITO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_CREDITO'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -707,23 +720,23 @@ function processPan(data: any[]): any[] {
 // =================================================================
 // LEV Processing Logic
 // =================================================================
-function processLev(data: any[]): any[] {
+function processLev(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
     
     const requiredBanks = ["OLE", "DAYCOVAL", "CREFAZ", "MASTER"];
 
     return data
       .filter(sourceRow => {
-            const nomBanco = String(sourceRow[normalizeHeader('NOM_BANCO')] || '').toUpperCase();
+            const nomBanco = String(getRowValue(sourceRow, headerMap, 'NOM_BANCO') || '').toUpperCase();
             return requiredBanks.some(bank => nomBanco.includes(bank));
       })
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
-        const nomBanco = String(sourceRow[normalizeHeader('NOM_BANCO')] || '').toUpperCase();
+        const nomBanco = String(getRowValue(sourceRow, headerMap, 'NOM_BANCO') || '').toUpperCase();
         
-        newRow['NOM_BANCO'] = sourceRow[normalizeHeader('NOM_BANCO')];
-        newRow['NUM_BANCO'] = sourceRow[normalizeHeader('NUM_BANCO')] || sourceRow[normalizeHeader('NUM_BAN')];
+        newRow['NOM_BANCO'] = getRowValue(sourceRow, headerMap, 'NOM_BANCO');
+        newRow['NUM_BANCO'] = getRowValue(sourceRow, headerMap, 'NUM_BANCO') || getRowValue(sourceRow, headerMap, 'NUM_BAN');
 
         if (nomBanco.includes('OLE')) {
             newRow['NOM_BANCO'] = 'OLÉ';
@@ -739,24 +752,24 @@ function processLev(data: any[]): any[] {
             newRow['NUM_BANCO'] = 243;
         }
         
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
-        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_TIPO_PROPOSTA_EMPRESTIMO')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+        newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_TIPO_PROPOSTA_EMPRESTIMO');
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('DSC_PRODUTO')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'DSC_PRODUTO');
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_SITUACAO_EMPRESTIMO')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DAT_EMPRESTIMO')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_SITUACAO_EMPRESTIMO');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_EMPRESTIMO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('NIC_CTR_USUARIO')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('COD_CPF_CLIENTE')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOM_CLIENTE')];
-        let datNasc = formatDate(sourceRow[normalizeHeader('DAT_NASCIMENTO')]);
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'NIC_CTR_USUARIO');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'COD_CPF_CLIENTE');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOM_CLIENTE');
+        let datNasc = formatDate(getRowValue(sourceRow, headerMap, 'DAT_NASCIMENTO'));
         if (!datNasc) {
             datNasc = '01/01/1990';
         }
@@ -774,13 +787,13 @@ function processLev(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('QTD_PARCELA')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VAL_PRESTACAO')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VAL_BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTD_PARCELA');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_PRESTACAO'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VAL_LIQUIDO')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DAT_CREDITO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_CREDITO'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -809,42 +822,42 @@ function processLev(data: any[]): any[] {
 // =================================================================
 // BRB-INCONTA Processing Logic
 // =================================================================
-function processBrbInconta(data: any[]): any[] {
+function processBrbInconta(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data
-      .filter(sourceRow => String(sourceRow[normalizeHeader('AGENTE')] || '').toUpperCase().trim() !== 'LV')
+      .filter(sourceRow => String(getRowValue(sourceRow, headerMap, 'AGENTE') || '').toUpperCase().trim() !== 'LV')
       .map(sourceRow => {
         const newRow: { [key: string]: any } = {};
 
         // Map and transform data based on BRB-INCONTA rules
         newRow['NUM_BANCO'] = 7056;
         newRow['NOM_BANCO'] = 'BRB - INCONTA';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('ID')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('ID')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'ID');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'ID');
         
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('PRODUTO')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'TABELA');
 
-        if (String(sourceRow[normalizeHeader('PRODUTO')] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
+        if (String(getRowValue(sourceRow, headerMap, 'PRODUTO') || '').toUpperCase().trim() === 'CONTRATO NOVO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('PRODUTO')];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'PRODUTO');
         }
 
         newRow['COD_PRODUTO'] = '';
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('STATUS')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('CRIACAO AF')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'CRIACAO_AF'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('AGENTE')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOME')];
-        let datNasc = formatDate(sourceRow[normalizeHeader('DATA DE NASCIMENTO')]);
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'AGENTE');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOME');
+        let datNasc = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DE_NASCIMENTO'));
         if (!datNasc) {
             datNasc = '01/01/1990';
         }
@@ -862,15 +875,15 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('PRAZO')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VALOR DE PARCELA')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VALOR PRINCIPAL')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PRAZO');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_DE_PARCELA'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_PRINCIPAL'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VALOR LIQUIDO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO'));
         
-        const isPago = String(sourceRow[normalizeHeader('STATUS')] || '').toUpperCase().trim() === 'PAGO';
-        const statusDateValue = sourceRow[normalizeHeader('STATUS DATA')];
+        const isPago = String(getRowValue(sourceRow, headerMap, 'STATUS') || '').toUpperCase().trim() === 'PAGO';
+        const statusDateValue = getRowValue(sourceRow, headerMap, 'STATUS_DATA');
 
         if (isPago) {
             newRow['DAT_CREDITO'] = formatDate(statusDateValue);
@@ -888,7 +901,7 @@ function processBrbInconta(data: any[]): any[] {
         newRow['DSC_OBSERVACAO'] = '';
         newRow['NUM_CPF_AGENTE'] = '';
         newRow['NUM_OBJETO_ECT'] = '';
-        newRow['PCL_TAXA_EMPRESTIMO'] = formatCurrency(sourceRow[normalizeHeader('TAXA MENSAL')]);
+        newRow['PCL_TAXA_EMPRESTIMO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'TAXA_MENSAL'));
         newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
@@ -906,7 +919,7 @@ function processBrbInconta(data: any[]): any[] {
 // =================================================================
 // GLM-CREFISACP Processing Logic
 // =================================================================
-function processGlmCrefisacp(data: any[]): any[] {
+function processGlmCrefisacp(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data.map(sourceRow => {
@@ -915,32 +928,32 @@ function processGlmCrefisacp(data: any[]): any[] {
         // Map and transform data based on GLM rules
         newRow['NUM_BANCO'] = 789;
         newRow['NOM_BANCO'] = 'CREFISACP';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('PROPOSTA')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('PROPOSTA')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'PROPOSTA');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'PROPOSTA');
         
-        const tabelaUpper = String(sourceRow[normalizeHeader('TABELA')] || '').toUpperCase();
+        const tabelaUpper = String(getRowValue(sourceRow, headerMap, 'TABELA') || '').toUpperCase();
         if (tabelaUpper.includes('NOVO')) {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else if (tabelaUpper.includes('REFIN')) {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'REFIN';
         } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('TABELA')];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'TABELA');
         }
         
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('TABELA')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'TABELA');
         newRow['COD_PRODUTO'] = '';
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('STATUS_CONTRATO')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DATA_CADASTRO')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS_CONTRATO');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_CADASTRO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('USUARIO_BANCO')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CNPJ_CPF')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('CLIENTE')];
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'USUARIO_BANCO');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CNPJ_CPF');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CLIENTE');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -955,13 +968,13 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('PRAZO')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VALOR_PARCELA')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VALOR_BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PRAZO');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_PARCELA'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VALOR_LIQUIDO')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DATA_INTEGRACAO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_INTEGRACAO'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -972,7 +985,7 @@ function processGlmCrefisacp(data: any[]): any[] {
         newRow['DSC_OBSERVACAO'] = '';
         newRow['NUM_CPF_AGENTE'] = '';
         newRow['NUM_OBJETO_ECT'] = '';
-        newRow['PCL_TAXA_EMPRESTIMO'] = formatCurrency(sourceRow[normalizeHeader('TAXA MENSAL')]);
+        newRow['PCL_TAXA_EMPRESTIMO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'TAXA_MENSAL'));
         newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
@@ -989,7 +1002,7 @@ function processGlmCrefisacp(data: any[]): any[] {
 // =================================================================
 // QUERO+ Processing Logic
 // =================================================================
-function processQueroMais(data: any[]): any[] {
+function processQueroMais(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data.map(sourceRow => {
@@ -998,10 +1011,10 @@ function processQueroMais(data: any[]): any[] {
         // Map and transform data based on QUERO+ rules
         newRow['NUM_BANCO'] = 465;
         newRow['NOM_BANCO'] = 'QUERO+';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('NUM_PROPOSTA')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'NUM_PROPOSTA');
         
-        let tipoProposta = sourceRow[normalizeHeader('DSC_TIPO_PROPOSTA_EMPRESTIMO')];
+        let tipoProposta = getRowValue(sourceRow, headerMap, 'DSC_TIPO_PROPOSTA_EMPRESTIMO');
         if (String(tipoProposta || '').toUpperCase().trim() === 'CARTÃO C/ SAQUE') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'CARTÃO';
         } else {
@@ -1009,19 +1022,19 @@ function processQueroMais(data: any[]): any[] {
         }
 
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('DSC_PRODUTO')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'DSC_PRODUTO');
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('DSC_SITUACAO_EMPRESTIMO')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DAT_EMPRESTIMO')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'DSC_SITUACAO_EMPRESTIMO');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DAT_EMPRESTIMO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('NIC_CTR_USUARIO')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('COD_CPF_CLIENTE')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOM_CLIENTE')];
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'NIC_CTR_USUARIO');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'COD_CPF_CLIENTE');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOM_CLIENTE');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -1036,14 +1049,14 @@ function processQueroMais(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('QTD_PARCELA')];
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTD_PARCELA');
         newRow['VAL_PRESTACAO'] = '';
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VAL_BRUTO')]);
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VAL_LIQUIDO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VAL_LIQUIDO'));
 
-        let datCredito = formatDate(sourceRow[normalizeHeader('DAT_CREDITO')]);
+        let datCredito = formatDate(getRowValue(sourceRow, headerMap, 'DAT_CREDITO'));
         if (datCredito === '00/00/0000' || datCredito.endsWith('1899')) {
             newRow['DAT_CREDITO'] = '';
         } else {
@@ -1077,14 +1090,14 @@ function processQueroMais(data: any[]): any[] {
 // =================================================================
 // QUALIBANKING Processing Logic
 // =================================================================
-function processQualibanking(data: any[]): any[] {
+function processQualibanking(data: any[], headerMap: Record<string, string>): any[] {
     const today = new Date();
     const twoMonthsAgo = subMonths(today, 2);
     const todayFormatted = format(today, 'dd/MM/yyyy');
 
     return data
       .filter(sourceRow => {
-            const proposalDateValue = sourceRow[normalizeHeader('Data da Proposta')];
+            const proposalDateValue = getRowValue(sourceRow, headerMap, 'DATA_DA_PROPOSTA');
             if (!proposalDateValue) return false;
 
             let proposalDate: Date | undefined;
@@ -1114,32 +1127,32 @@ function processQualibanking(data: any[]): any[] {
 
         newRow['NUM_BANCO'] = 22;
         newRow['NOM_BANCO'] = 'QUALIBANKING';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('Número do Contrato')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('Número do Contrato')];
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('Nome da Tabela')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'NUMERO_DO_CONTRATO');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'NUMERO_DO_CONTRATO');
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'NOME_DA_TABELA');
         newRow['COD_PRODUTO'] = '';
         
-        const tipoOperacao = String(sourceRow[normalizeHeader('Tipo de Operação')] || '').trim().toUpperCase();
+        const tipoOperacao = String(getRowValue(sourceRow, headerMap, 'TIPO_DE_OPERACAO') || '').trim().toUpperCase();
         if (tipoOperacao === 'REFIN DA PORTABILIDADE' || tipoOperacao === 'REFINANCIAMENTO DA PORTABILIDADE') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
         } else if (tipoOperacao.includes('PORTABILIDADE + REFIN')) {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTABILIDADE';
         } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = String(sourceRow[normalizeHeader('Tipo de Operação')] || '').trim();
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = String(getRowValue(sourceRow, headerMap, 'TIPO_DE_OPERACAO') || '').trim();
         }
 
         newRow['DAT_CTR_INCLUSAO'] = todayFormatted;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('Status')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('Data da Proposta')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DA_PROPOSTA'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = sourceRow[normalizeHeader('Login')];
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('Nome')];
+        newRow['NIC_CTR_USUARIO'] = getRowValue(sourceRow, headerMap, 'LOGIN');
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOME');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -1154,19 +1167,19 @@ function processQualibanking(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('Prazo')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('Valor da Parcela')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PRAZO');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_DA_PARCELA'));
 
         if (newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] === 'PORTABILIDADE') {
             newRow['VAL_BRUTO'] = formatCurrency('0');
         } else {
-            newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('Valor do Empréstimo')]);
+            newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_DO_EMPRESTIMO'));
         }
         
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('Valor Líquido ao Cliente')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('Data do Crédito ao Cliente')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO_AO_CLIENTE'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DO_CREDITO_AO_CLIENTE'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -1177,7 +1190,7 @@ function processQualibanking(data: any[]): any[] {
         newRow['DSC_OBSERVACAO'] = '';
         newRow['NUM_CPF_AGENTE'] = '';
         newRow['NUM_OBJETO_ECT'] = '';
-        newRow['PCL_TAXA_EMPRESTIMO'] = extractInterestRate(sourceRow[normalizeHeader('Nome da Tabela')]);
+        newRow['PCL_TAXA_EMPRESTIMO'] = extractInterestRate(getRowValue(sourceRow, headerMap, 'NOME_DA_TABELA'));
         newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
         newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
         newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
@@ -1195,7 +1208,7 @@ function processQualibanking(data: any[]): any[] {
 // =================================================================
 // NEOCREDITO Processing Logic
 // =================================================================
-function processNeocredito(data: any[]): any[] {
+function processNeocredito(data: any[], headerMap: Record<string, string>): any[] {
   const today = format(new Date(), 'dd/MM/yyyy');
 
   return data.map(sourceRow => {
@@ -1203,10 +1216,10 @@ function processNeocredito(data: any[]): any[] {
 
     newRow['NUM_BANCO'] = 410;
     newRow['NOM_BANCO'] = 'NEOCREDITO';
-    newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('PROPOSTA')];
-    newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('PROPOSTA')];
+    newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'PROPOSTA');
+    newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'PROPOSTA');
 
-    const tipoOperacao = String(sourceRow[normalizeHeader('TIPO OPERACAO')] || '').toUpperCase();
+    const tipoOperacao = String(getRowValue(sourceRow, headerMap, 'TIPO_OPERACAO') || '').toUpperCase();
     if (tipoOperacao.includes('COMPRA')) {
       newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'RECOMPRA';
     } else if (tipoOperacao.includes('NOVO')) {
@@ -1214,14 +1227,17 @@ function processNeocredito(data: any[]): any[] {
     } else if (tipoOperacao.includes('MARGEM LIVRE')) {
         newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
     } else {
-      newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow[normalizeHeader('TIPO OPERACAO')];
+      newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'TIPO_OPERACAO');
     }
 
     newRow['COD_PRODUTO'] = '';
-    newRow['DSC_PRODUTO'] = `${sourceRow[normalizeHeader('CONVENIO')] || ''}-${sourceRow[normalizeHeader('TABELA')] || ''}`;
+    const convenio = getRowValue(sourceRow, headerMap, 'CONVENIO') || '';
+    const tabela = getRowValue(sourceRow, headerMap, 'TABELA') || '';
+    newRow['DSC_PRODUTO'] = `${convenio}-${tabela}`;
+
     newRow['DAT_CTR_INCLUSAO'] = today;
-    newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('STATUS')];
-    newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DATA CADASTRO')]);
+    newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS');
+    newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_CADASTRO'));
     newRow['COD_EMPREGADOR'] = '';
     newRow['DSC_CONVENIO'] = '';
     newRow['COD_ORGAO'] = '';
@@ -1229,15 +1245,15 @@ function processNeocredito(data: any[]): any[] {
     newRow['COD_PRODUTOR_VENDA'] = '';
     newRow['NOM_PRODUTOR_VENDA'] = '';
     
-    let usuario = String(sourceRow[normalizeHeader('USUARIO')] || '');
+    let usuario = String(getRowValue(sourceRow, headerMap, 'USUARIO') || '');
     if (usuario.toUpperCase() === 'TAINA LUCIO DA LU') {
         newRow['NIC_CTR_USUARIO'] = 'TAINA LUCIO DA LUZ';
     } else {
         newRow['NIC_CTR_USUARIO'] = usuario;
     }
 
-    newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF')];
-    newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('NOME')];
+    newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF');
+    newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'NOME');
     newRow['DAT_NASCIMENTO'] = '01/01/1990';
     newRow['NUM_IDENTIDADE'] = '';
     newRow['NOM_LOGRADOURO'] = '';
@@ -1252,13 +1268,13 @@ function processNeocredito(data: any[]): any[] {
     newRow['NOM_MAE'] = '';
     newRow['NOM_PAI'] = '';
     newRow['NUM_BENEFICIO'] = '';
-    newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('PRAZO')];
-    newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('PMT')]);
-    newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VALOR OPERACAO')]);
+    newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PRAZO');
+    newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'PMT'));
+    newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_OPERACAO'));
     newRow['VAL_SALDO_RECOMPRA'] = '';
     newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-    newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VALOR TROCO')]);
-    newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DATA INTEGRADO')]);
+    newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_TROCO'));
+    newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_INTEGRADO'));
     newRow['DAT_CONFIRMACAO'] = '';
     newRow['VAL_REPASSE'] = '';
     newRow['PCL_COMISSAO'] = '';
@@ -1288,7 +1304,7 @@ function processNeocredito(data: any[]): any[] {
 // =================================================================
 // 2TECH Processing Logic
 // =================================================================
-function process2Tech(data: any[]): any[] {
+function process2Tech(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data.map(sourceRow => {
@@ -1305,10 +1321,10 @@ function process2Tech(data: any[]): any[] {
 
         newRow['NUM_BANCO'] = 789;
         newRow['NOM_BANCO'] = 'CREFISACP';
-        newRow['NUM_PROPOSTA'] = cleanString(sourceRow[normalizeHeader('NUMERO_ADE')]);
-        newRow['NUM_CONTRATO'] = cleanString(sourceRow[normalizeHeader('NUMERO_ADE')]);
+        newRow['NUM_PROPOSTA'] = cleanString(getRowValue(sourceRow, headerMap, 'NUMERO_ADE'));
+        newRow['NUM_CONTRATO'] = cleanString(getRowValue(sourceRow, headerMap, 'NUMERO_ADE'));
 
-        const tipoContrato = String(sourceRow[normalizeHeader('TIPO CONTRATO')] || '').trim();
+        const tipoContrato = String(getRowValue(sourceRow, headerMap, 'TIPO_CONTRATO') || '').trim();
         if (tipoContrato === '001 - Novo Contrato') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else if (tipoContrato === '027 - Refinanciamento') {
@@ -1318,25 +1334,28 @@ function process2Tech(data: any[]): any[] {
         }
 
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = `${sourceRow[normalizeHeader('CONVENIO')] || ''}-${sourceRow[normalizeHeader('TABELA')] || ''}`;
+        const convenio = getRowValue(sourceRow, headerMap, 'CONVENIO') || '';
+        const tabela = getRowValue(sourceRow, headerMap, 'TABELA') || '';
+        newRow['DSC_PRODUTO'] = `${convenio}-${tabela}`;
+
         newRow['DAT_CTR_INCLUSAO'] = today;
         
-        if (String(sourceRow[normalizeHeader('SIT_PAGAMENTO_CLIENTE')] || '').toUpperCase().trim() === 'PAGO AO CLIENTE') {
+        if (String(getRowValue(sourceRow, headerMap, 'SIT_PAGAMENTO_CLIENTE') || '').toUpperCase().trim() === 'PAGO AO CLIENTE') {
             newRow['DSC_SITUACAO_EMPRESTIMO'] = 'PAGO AO CLIENTE';
         } else {
-            newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('SIT_BANCO')];
+            newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'SIT_BANCO');
         }
         
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DATA_DIGIT_BANCO')]);
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_DIGIT_BANCO'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
         newRow['NOM_ORGAO'] = '';
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
-        newRow['NIC_CTR_USUARIO'] = cleanString(sourceRow[normalizeHeader('LOGIN_SUB_USUARIO')]);
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('CLIENTE')];
+        newRow['NIC_CTR_USUARIO'] = cleanString(getRowValue(sourceRow, headerMap, 'LOGIN_SUB_USUARIO'));
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CLIENTE');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -1351,13 +1370,13 @@ function process2Tech(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('PRAZO')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VLR_PARC')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VALOR_BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'PRAZO');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VLR_PARC'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VALOR_LIQUIDO')]);
-        newRow['DAT_CREDITO'] = formatDate(sourceRow[normalizeHeader('DATA_PAGAMENTO_CLIENTE')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO'));
+        newRow['DAT_CREDITO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA_PAGAMENTO_CLIENTE'));
         newRow['DAT_CONFIRMACAO'] = '';
         newRow['VAL_REPASSE'] = '';
         newRow['PCL_COMISSAO'] = '';
@@ -1387,7 +1406,7 @@ function process2Tech(data: any[]): any[] {
 // =================================================================
 // FACTA Processing Logic
 // =================================================================
-function processFacta(data: any[]): any[] {
+function processFacta(data: any[], headerMap: Record<string, string>): any[] {
     const today = format(new Date(), 'dd/MM/yyyy');
 
     return data.map(sourceRow => {
@@ -1395,10 +1414,10 @@ function processFacta(data: any[]): any[] {
         
         newRow['NUM_BANCO'] = 897;
         newRow['NOM_BANCO'] = 'FACTA';
-        newRow['NUM_PROPOSTA'] = sourceRow[normalizeHeader('COD')];
-        newRow['NUM_CONTRATO'] = sourceRow[normalizeHeader('COD')];
+        newRow['NUM_PROPOSTA'] = getRowValue(sourceRow, headerMap, 'COD');
+        newRow['NUM_CONTRATO'] = getRowValue(sourceRow, headerMap, 'COD');
         
-        const tipoProduto = String(sourceRow[normalizeHeader('TIPO PRODUTO')] || '').trim().toUpperCase();
+        const tipoProduto = String(getRowValue(sourceRow, headerMap, 'TIPO_PRODUTO') || '').trim().toUpperCase();
         if (tipoProduto === 'REFIN / PORT') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
         } else if (tipoProduto === 'CARTÃO BENEFÍCIO') {
@@ -1408,10 +1427,10 @@ function processFacta(data: any[]): any[] {
         }
 
         newRow['COD_PRODUTO'] = '';
-        newRow['DSC_PRODUTO'] = sourceRow[normalizeHeader('PRODUTO')];
+        newRow['DSC_PRODUTO'] = getRowValue(sourceRow, headerMap, 'PRODUTO');
         newRow['DAT_CTR_INCLUSAO'] = today;
-        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow[normalizeHeader('STATUS')];
-        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow[normalizeHeader('DATA')]);
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = getRowValue(sourceRow, headerMap, 'STATUS');
+        newRow['DAT_EMPRESTIMO'] = formatDate(getRowValue(sourceRow, headerMap, 'DATA'));
         newRow['COD_EMPREGADOR'] = '';
         newRow['DSC_CONVENIO'] = '';
         newRow['COD_ORGAO'] = '';
@@ -1419,15 +1438,15 @@ function processFacta(data: any[]): any[] {
         newRow['COD_PRODUTOR_VENDA'] = '';
         newRow['NOM_PRODUTOR_VENDA'] = '';
         
-        let digitador = String(sourceRow[normalizeHeader('COD DIGITADOR NO BANCO')] || '');
+        let digitador = String(getRowValue(sourceRow, headerMap, 'COD_DIGITADOR_NO_BANCO') || '');
         if (digitador.toUpperCase().startsWith('SUB ')) {
             newRow['NIC_CTR_USUARIO'] = digitador.substring(4);
         } else {
             newRow['NIC_CTR_USUARIO'] = digitador;
         }
         
-        newRow['COD_CPF_CLIENTE'] = sourceRow[normalizeHeader('CPF')];
-        newRow['NOM_CLIENTE'] = sourceRow[normalizeHeader('CLIENTE')];
+        newRow['COD_CPF_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CPF');
+        newRow['NOM_CLIENTE'] = getRowValue(sourceRow, headerMap, 'CLIENTE');
         newRow['DAT_NASCIMENTO'] = '01/01/1990';
         newRow['NUM_IDENTIDADE'] = '';
         newRow['NOM_LOGRADOURO'] = '';
@@ -1442,14 +1461,14 @@ function processFacta(data: any[]): any[] {
         newRow['NOM_MAE'] = '';
         newRow['NOM_PAI'] = '';
         newRow['NUM_BENEFICIO'] = '';
-        newRow['QTD_PARCELA'] = sourceRow[normalizeHeader('QTDE PARCELAS')];
-        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow[normalizeHeader('VALOR PARCELA')]);
-        newRow['VAL_BRUTO'] = formatCurrency(sourceRow[normalizeHeader('VALOR BRUTO')]);
+        newRow['QTD_PARCELA'] = getRowValue(sourceRow, headerMap, 'QTDE_PARCELAS');
+        newRow['VAL_PRESTACAO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_PARCELA'));
+        newRow['VAL_BRUTO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_BRUTO'));
         newRow['VAL_SALDO_RECOMPRA'] = '';
         newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
-        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow[normalizeHeader('VALOR LIQUIDO')]);
+        newRow['VAL_LIQUIDO'] = formatCurrency(getRowValue(sourceRow, headerMap, 'VALOR_LIQUIDO'));
 
-        let dataAverbacao = formatDate(sourceRow[normalizeHeader('DATA AVERBACAO')]);
+        let dataAverbacao = formatDate(getRowValue(sourceRow, headerMap, 'DATA_AVERBACAO'));
         if (dataAverbacao === '00/00/0000') {
             newRow['DAT_CREDITO'] = '';
         } else {
@@ -1485,7 +1504,7 @@ function processFacta(data: any[]): any[] {
 // =================================================================
 // Placeholder Processing Logic for new systems
 // =================================================================
-function processGeneric(data: any[], system: string): any[] {
+function processGeneric(data: any[], system: string, headerMap: Record<string, string>): any[] {
     return data.map(sourceRow => {
         const newRow: { [key: string]: any } = {};
         // Placeholder logic - just returns an empty object for each field
@@ -1509,33 +1528,29 @@ export async function processExcelFile(
     }
     const buffer = Buffer.from(base64Data, "base64");
 
-    // Read workbook with raw values to prevent XLSX from auto-parsing dates and numbers
-    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true, raw: true });
+    const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     if (!worksheet) {
       throw new Error("No worksheet found in the Excel file.");
     }
     
-    // Convert sheet to JSON, reading all values as is.
+    // Get original headers from the sheet
+    const originalHeaders: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0, raw: true })[0];
+    
+    // Convert sheet to JSON array of objects, starting from the second row (data)
     const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true, defval: '' });
 
-    // Sanitize headers: trim spaces from all keys in each row object
-    const sanitizedJsonData = jsonData.map(row => {
-        const newRow: {[key: string]: any} = {};
-        for (const key in row) {
-            if (Object.prototype.hasOwnProperty.call(row, key)) {
-                const normalizedKey = normalizeHeader(key);
-                newRow[normalizedKey] = row[key];
-            }
-        }
-        return newRow;
-    });
+    if (jsonData.length === 0) {
+        throw new Error("No data rows found in the Excel sheet.");
+    }
 
+    // Create a map from normalized headers to original headers for robust lookup
+    const headerMap = createHeaderMap(originalHeaders);
 
     // Filter out rows that are completely empty
-    const filteredData = sanitizedJsonData.filter(row => 
-        Object.values(row).some(cell => cell !== null && cell !== ''));
+    const filteredData = jsonData.filter(row => 
+        Object.values(row).some(cell => cell !== null && String(cell).trim() !== ''));
 
     if (filteredData.length === 0) {
         throw new Error("No data found in the Excel sheet. Please ensure it is not empty.");
@@ -1546,47 +1561,47 @@ export async function processExcelFile(
 
     switch (system) {
         case 'V8DIGITAL':
-            processedData = processV8Digital(filteredData);
+            processedData = processV8Digital(filteredData, headerMap);
             outputFields = V8DIGITAL_OUTPUT_FIELDS;
             break;
         case 'UNNO':
-            processedData = processUnno(filteredData);
+            processedData = processUnno(filteredData, headerMap);
             outputFields = UNNO_OUTPUT_FIELDS;
             break;
         case 'PAN':
-            processedData = processPan(filteredData);
+            processedData = processPan(filteredData, headerMap);
             outputFields = PAN_OUTPUT_FIELDS;
             break;
         case 'LEV':
-            processedData = processLev(filteredData);
+            processedData = processLev(filteredData, headerMap);
             outputFields = LEV_OUTPUT_FIELDS;
             break;
         case 'BRB-INCONTA':
-            processedData = processBrbInconta(filteredData);
+            processedData = processBrbInconta(filteredData, headerMap);
             outputFields = BRB_INCONTA_OUTPUT_FIELDS;
             break;
         case 'GLM-CREFISACP':
-            processedData = processGlmCrefisacp(filteredData);
+            processedData = processGlmCrefisacp(filteredData, headerMap);
             outputFields = GLM_CREFISACP_OUTPUT_FIELDS;
             break;
         case 'QUEROMAIS':
-            processedData = processQueroMais(filteredData);
+            processedData = processQueroMais(filteredData, headerMap);
             outputFields = QUEROMAIS_OUTPUT_FIELDS;
             break;
         case 'QUALIBANKING':
-            processedData = processQualibanking(filteredData);
+            processedData = processQualibanking(filteredData, headerMap);
             outputFields = QUALIBANKING_OUTPUT_FIELDS;
             break;
         case 'NEOCREDITO':
-            processedData = processNeocredito(filteredData);
+            processedData = processNeocredito(filteredData, headerMap);
             outputFields = NEOCREDITO_OUTPUT_FIELDS;
             break;
         case '2TECH':
-            processedData = process2Tech(filteredData);
+            processedData = process2Tech(filteredData, headerMap);
             outputFields = TECH2_OUTPUT_FIELDS;
             break;
         case 'FACTA':
-            processedData = processFacta(filteredData);
+            processedData = processFacta(filteredData, headerMap);
             outputFields = FACTA_OUTPUT_FIELDS;
             break;
         case 'PRESENCABANK':
@@ -1598,7 +1613,7 @@ export async function processExcelFile(
         case 'BMG':
         case 'INTER':
         case 'DIGIO':
-            processedData = processGeneric(filteredData, system);
+            processedData = processGeneric(filteredData, system, headerMap);
             outputFields = GENERIC_OUTPUT_FIELDS;
             break;
         default:
@@ -1640,12 +1655,3 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
-
-
-
-
-
-
-
-
-
