@@ -1535,11 +1535,18 @@ export async function processExcelFile(
       throw new Error("No worksheet found in the Excel file.");
     }
     
-    // Get original headers from the sheet
-    const originalHeaders: string[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0, raw: true })[0];
-    
-    // Convert sheet to JSON array of objects, starting from the second row (data)
-    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true, defval: '' });
+    // Get raw data as array of arrays
+    const rawData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
+
+    // Find the first row that is not empty to use as the header row
+    let headerRowIndex = rawData.findIndex(row => row.some(cell => cell !== null && String(cell).trim() !== ''));
+    if (headerRowIndex === -1) {
+        throw new Error("Could not find a valid header row in the Excel file.");
+    }
+    const originalHeaders: string[] = rawData[headerRowIndex].map(String);
+
+    // Convert sheet to JSON array of objects, starting from the row AFTER the header
+    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex, raw: true, defval: '' });
 
     if (jsonData.length === 0) {
         throw new Error("No data rows found in the Excel sheet.");
