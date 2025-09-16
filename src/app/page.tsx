@@ -31,7 +31,7 @@ const systems: System[] = [
     { name: "QUALIBANKING", href: "/qualibanking", variant: "default", active: true },
     { name: "NEOCREDITO", href: "/neocredito", variant: "secondary", active: true },
     { name: "2TECH", href: "/2tech", variant: "secondary", active: true },
-    { name: "FACTA", href: "/facta", variant: "secondary", active: false },
+    { name: "FACTA", href: "/facta", variant: "secondary", active: true },
     { name: "TOTALCASH", href: "/totalcash", variant: "default", active: false },
 ];
 

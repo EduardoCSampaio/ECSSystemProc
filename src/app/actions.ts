@@ -5,6 +5,7 @@
 
 
 
+
 "use server";
 
 import * as XLSX from "xlsx";
@@ -280,6 +281,27 @@ const TECH2_INPUT_FIELDS = [
     "TABELA"
 ];
 const TECH2_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
+
+
+// =================================================================
+// FACTA Configuration
+// =================================================================
+const FACTA_INPUT_FIELDS = [
+    "COD",
+    "TIPO PRODUTO",
+    "PRODUTO",
+    "STATUS",
+    "DATA",
+    "COD DIGITADOR NO BANCO",
+    "CPF",
+    "CLIENTE",
+    "QTDE PARCELAS",
+    "VALOR PARCELA",
+    "VALOR BRUTO",
+    "VALOR LIQUIDO",
+    "DATA AVERBACAO",
+];
+const FACTA_OUTPUT_FIELDS = V8DIGITAL_OUTPUT_FIELDS;
 
 
 // =================================================================
@@ -773,12 +795,12 @@ function processBrbInconta(data: any[]): any[] {
         newRow['NUM_PROPOSTA'] = sourceRow['ID'];
         newRow['NUM_CONTRATO'] = sourceRow['ID'];
         
-        newRow['DSC_PRODUTO'] = sourceRow['TABELA'];
+        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
 
-        if (String(sourceRow['PRODUTO'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
+        if (String(sourceRow['TABELA'] || '').toUpperCase().trim() === 'CONTRATO NOVO') {
             newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'NOVO';
         } else {
-            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['PRODUTO'];
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = sourceRow['TABELA'];
         }
 
         newRow['COD_PRODUTO'] = '';
@@ -1336,6 +1358,104 @@ function process2Tech(data: any[]): any[] {
 
 
 // =================================================================
+// FACTA Processing Logic
+// =================================================================
+function processFacta(data: any[]): any[] {
+    const today = format(new Date(), 'dd/MM/yyyy');
+
+    return data.map(sourceRow => {
+        const newRow: { [key: string]: any } = {};
+        
+        newRow['NUM_BANCO'] = 897;
+        newRow['NOM_BANCO'] = 'FACTA';
+        newRow['NUM_PROPOSTA'] = sourceRow['COD'];
+        newRow['NUM_CONTRATO'] = sourceRow['COD'];
+        
+        const tipoProduto = String(sourceRow['TIPO PRODUTO'] || '').trim().toUpperCase();
+        if (tipoProduto === 'REFIN / PORT') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'PORTAB/REFIN';
+        } else if (tipoProduto === 'CARTÃO BENEFÍCIO') {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = 'CARTÃO';
+        } else {
+            newRow['DSC_TIPO_PROPOSTA_EMPRESTIMO'] = tipoProduto;
+        }
+
+        newRow['COD_PRODUTO'] = '';
+        newRow['DSC_PRODUTO'] = sourceRow['PRODUTO'];
+        newRow['DAT_CTR_INCLUSAO'] = today;
+        newRow['DSC_SITUACAO_EMPRESTIMO'] = sourceRow['STATUS'];
+        newRow['DAT_EMPRESTIMO'] = formatDate(sourceRow['DATA']);
+        newRow['COD_EMPREGADOR'] = '';
+        newRow['DSC_CONVENIO'] = '';
+        newRow['COD_ORGAO'] = '';
+        newRow['NOM_ORGAO'] = '';
+        newRow['COD_PRODUTOR_VENDA'] = '';
+        newRow['NOM_PRODUTOR_VENDA'] = '';
+        
+        let digitador = String(sourceRow['COD DIGITADOR NO BANCO'] || '');
+        if (digitador.toUpperCase().startsWith('SUB ')) {
+            newRow['NIC_CTR_USUARIO'] = digitador.substring(4);
+        } else {
+            newRow['NIC_CTR_USUARIO'] = digitador;
+        }
+        
+        newRow['COD_CPF_CLIENTE'] = sourceRow['CPF'];
+        newRow['NOM_CLIENTE'] = sourceRow['CLIENTE'];
+        newRow['DAT_NASCIMENTO'] = '01/01/1990';
+        newRow['NUM_IDENTIDADE'] = '';
+        newRow['NOM_LOGRADOURO'] = '';
+        newRow['NUM_PREDIO'] = '';
+        newRow['DSC_CMPLMNT_ENDRC'] = '';
+        newRow['NOM_BAIRRO'] = '';
+        newRow['NOM_LOCALIDADE'] = '';
+        newRow['SIG_UNIDADE_FEDERACAO'] = '';
+        newRow['COD_ENDRCMNT_PSTL'] = '';
+        newRow['NUM_TELEFONE'] = '';
+        newRow['NUM_TELEFONE_CELULAR'] = '';
+        newRow['NOM_MAE'] = '';
+        newRow['NOM_PAI'] = '';
+        newRow['NUM_BENEFICIO'] = '';
+        newRow['QTD_PARCELA'] = sourceRow['QTDE PARCELAS'];
+        newRow['VAL_PRESTACAO'] = formatCurrency(sourceRow['VALOR PARCELA']);
+        newRow['VAL_BRUTO'] = formatCurrency(sourceRow['VALOR BRUTO']);
+        newRow['VAL_SALDO_RECOMPRA'] = '';
+        newRow['VAL_SALDO_REFINANCIAMENTO'] = '';
+        newRow['VAL_LIQUIDO'] = formatCurrency(sourceRow['VALOR LIQUIDO']);
+
+        let dataAverbacao = formatDate(sourceRow['DATA AVERBACAO']);
+        if (dataAverbacao === '00/00/0000') {
+            newRow['DAT_CREDITO'] = '';
+        } else {
+            newRow['DAT_CREDITO'] = dataAverbacao;
+        }
+        
+        newRow['DAT_CONFIRMACAO'] = '';
+        newRow['VAL_REPASSE'] = '';
+        newRow['PCL_COMISSAO'] = '';
+        newRow['VAL_COMISSAO'] = '';
+        newRow['COD_UNIDADE_EMPRESA'] = '';
+        newRow['COD_SITUACAO_EMPRESTIMO'] = '';
+        newRow['DAT_ESTORNO'] = '';
+        newRow['DSC_OBSERVACAO'] = '';
+        newRow['NUM_CPF_AGENTE'] = '';
+        newRow['NUM_OBJETO_ECT'] = '';
+        newRow['PCL_TAXA_EMPRESTIMO'] = '';
+        newRow['DSC_TIPO_FORMULARIO_EMPRESTIMO'] = 'DIGITAL';
+        newRow['DSC_TIPO_CREDITO_EMPRESTIMO'] = '';
+        newRow['NOM_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_GRUPO_UNIDADE_EMPRESA'] = '';
+        newRow['COD_TIPO_FUNCAO'] = '';
+        newRow['COD_TIPO_PROPOSTA_EMPRESTIMO'] = '';
+        newRow['COD_LOJA_DIGITACAO'] = '';
+        newRow['VAL_SEGURO'] = '';
+
+        return newRow;
+    });
+}
+
+
+// =================================================================
 // Placeholder Processing Logic for new systems
 // =================================================================
 function processGeneric(data: any[], system: string): any[] {
@@ -1438,6 +1558,9 @@ export async function processExcelFile(
             outputFields = TECH2_OUTPUT_FIELDS;
             break;
         case 'FACTA':
+            processedData = processFacta(filteredData);
+            outputFields = FACTA_OUTPUT_FIELDS;
+            break;
         case 'PRESENCABANK':
         case 'PRATA DIGITAL':
         case 'PHTECH':
@@ -1489,6 +1612,7 @@ export async function processExcelFile(
     return { success: false, error: errorMessage };
   }
 }
+
 
 
 
